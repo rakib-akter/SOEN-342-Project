@@ -2,30 +2,52 @@
 
 left to right direction
 
+skinparam usecase {
+    BackgroundColor<<critical>> #F8CECC
+    BorderColor<<critical>> #B85450
+}
+
 actor "Patient" as patient
 actor "Administrative Staff" as staff
 actor "Healthcare Professional" as hcp
-actor "External Physician" as extPhy
 
 rectangle "Appointment Tracking System" {
-    usecase "Manage Patient" as ManagePatient
-    usecase "Search Patient" as SearchPatient
+    usecase "Confirm Appointment" as ConfirmAppointment <<non-critical>>
+    usecase "Book Appointment" as BookAppointment <<critical>>
+    usecase "Reschedule Appointment" as RescheduleAppointment <<non-critical>>
+    usecase "Cancel Appointment" as CancelAppointment <<non-critical>>
 
-    usecase "Book Appointment" as BookAppointment
-    usecase "Reschedule Appointment" as RescheduleAppointment
-    usecase "Cancel Appointment" as CancelAppointment
+    usecase "Manage Patient Information" as ManagePatient <<non-critical>>
+    usecase "Register Patient Arrival" as RegisterPatientArrival <<critical>>
+    usecase "Process Billing" as ProcessBilling <<non-critical>>
 
-    usecase "Register Patient Arrival" as RegisterPatientArrival
+    usecase "Record External Referral" as RecordReferral <<non-critical>>
+    usecase "Issue Referral" as IssueReferral <<critical>>
 
-    usecase "Conduct Consultation" as ConductConsultation
-    usecase "Issue Prescription" as IssuePrescription
-    usecase "Issue Referral" as IssueReferral
-
-    usecase "Generate Invoice" as GenerateInvoice
-    usecase "Record Payment" as RecordPayment
-
-    usecase "Manage Professional Information" as ManageProfessionalInformation
-    usecase "Manage Professional Schedule" as ManageProfessionalSchedule
+    usecase "Conduct Consultation" as ConductConsultation <<critical>>
+    usecase "Issue Prescription" as IssuePrescription <<non-critical>>
+    usecase "Manage Professional Information" as ManageProfessionalInformation <<non-critical>>
+    usecase "Manage Professional Schedule" as ManageProfessionalSchedule <<non-critical>>
 }
+
+patient -- ConfirmAppointment
+patient -- BookAppointment
+patient -- RescheduleAppointment
+patient -- CancelAppointment
+
+staff -- BookAppointment
+staff -- RescheduleAppointment
+staff -- CancelAppointment
+staff -- ManagePatient
+staff -- RegisterPatientArrival
+staff -- ProcessBilling
+staff -- RecordReferral
+
+hcp -- IssueReferral
+hcp -- ConductConsultation
+hcp -- ManageProfessionalInformation
+hcp -- ManageProfessionalSchedule
+
+ConductConsultation <.. IssuePrescription : <<extend>>
 
 @enduml

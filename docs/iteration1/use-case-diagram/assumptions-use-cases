@@ -1,0 +1,14 @@
+## Assumptions
+
+1. Users are identified by their role for now. Log In isn't modelled as a use case.
+2. Patients can book, reschedule, and cancel their own appointments.
+3. If patient requested appointments, then they are confirmed automatically. If staff requested appointments, it is booked but the patient must confirm.
+4. The professional records the follow-up in Conduct Consultation, but staff books it.
+5. External physicians don't use the system, but staff records their referrals for clinic's physicians.
+6. HealthCare Professional records are created by an unmodeled Administration Staff Manager, outside the scope of this iteration. After that, professionals maintain their own information and schedule.
+7. Professionals can view medical records only for their assigned patients, including outside a consultation.
+8. Administrative Staff handles billing, and the invoice and payment are done together.
+9. Clinic locations already exist in the system.
+10. All healthcare professionals (physicians, specialists, nurses) can do the same things in the system.
+11. External systems (RAMQ, pharmacies, provincial systems) are out of scope and not shown as actors.
+12. Authorized clinic staff depends in this context. Healthcare Professional for patient's medical actions and Administrative Staff for the rest

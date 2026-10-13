@@ -1,0 +1,31 @@
+@startuml Use-case Diagram
+
+left to right direction
+
+actor "Patient" as patient
+actor "Administrative Staff" as staff
+actor "Healthcare Professional" as hcp
+actor "External Physician" as extPhy
+
+rectangle "Appointment Tracking System" {
+    usecase "Manage Patient" as ManagePatient
+    usecase "Search Patient" as SearchPatient
+
+    usecase "Book Appointment" as BookAppointment
+    usecase "Reschedule Appointment" as RescheduleAppointment
+    usecase "Cancel Appointment" as CancelAppointment
+
+    usecase "Register Patient Arrival" as RegisterPatientArrival
+
+    usecase "Conduct Consultation" as ConductConsultation
+    usecase "Issue Prescription" as IssuePrescription
+    usecase "Issue Referral" as IssueReferral
+
+    usecase "Generate Invoice" as GenerateInvoice
+    usecase "Record Payment" as RecordPayment
+
+    usecase "Manage Professional Information" as ManageProfessionalInformation
+    usecase "Manage Professional Schedule" as ManageProfessionalSchedule
+}
+
+@enduml

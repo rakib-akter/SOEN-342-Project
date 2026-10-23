@@ -1,0 +1,145 @@
+@startuml
+hide circle
+hide empty members
+skinparam linetype polyline
+
+
+class Patient {
+  patientId : String
+  firstName : String
+  lastName : String
+  dateOfBirth : Date
+  phoneNumber : String
+}
+abstract class Insurance {
+  insuranceNumber : String
+}
+class RAMQInsurance
+class PrivateInsurance {
+  insurerName : String
+}
+class ClinicalRecord
+
+abstract class ClinicStaff {
+  employeeId : String
+  firstName : String
+  lastName : String
+}
+class HealthcareProfessional {
+  licenseNumber : String
+  profession : Profession
+}
+class AdministrativeStaff
+class ExternalPhysician {
+  firstName : String
+  lastName : String
+  licenseNumber : String
+}
+class Specialty {
+  name : String
+}
+class Schedule {
+  dayOfWeek : DayOfWeek
+  startTime : Time
+  endTime : Time
+}
+class ClinicLocation {
+  name : String
+  address : String
+}
+
+class MedicalService {
+  name : String
+  requiresReferral : Boolean
+  isInsured : Boolean
+  fee : Money
+}
+class Appointment {
+  date : Date
+  startTime : Time
+  status : AppointmentStatus
+  arrivalTime : Time
+}
+class Referral {
+  clinicalReason : String
+  priority : Priority
+  status : ReferralStatus
+}
+
+class Consultation {
+  observations : String
+  diagnoses : String
+  treatmentRecommendations : String
+  followUpRequirements : String
+}
+class Prescription {
+  dateIssued : Date
+}
+class PrescriptionLineItem {
+  dosage : String
+  frequency : String
+}
+class Medication {
+  name : String
+}
+
+class Invoice {
+  invoiceNumber : String
+  amount : Money
+  status : InvoiceStatus
+}
+class Payment {
+  date : Date
+  amount : Money
+  method : PaymentMethod
+}
+class ActivityLogEntry {
+  timestamp : DateTime
+  action : String
+}
+
+' --- Patient side (left) ---
+Patient "1" -left- "0..*" Insurance : Covered-by >
+Insurance <|-- RAMQInsurance
+Insurance <|-- PrivateInsurance
+Patient "1" -down- "1" ClinicalRecord : Has >
+
+' --- Appointment (centre) ---
+Patient "1" -right- "*" Appointment : Attends >
+HealthcareProfessional "1" -left- "*" Appointment : Conducts >
+Appointment "*" -up- "1" MedicalService : Is-for >
+Appointment "*" -- "1" ClinicLocation : Takes-place-at >
+
+' --- Referral (top) ---
+Referral "0..1" -down- "*" Appointment : Results-in >
+Referral "*" -- "1" Patient : Refers >
+Referral "*" -right- "0..1" Specialty : Requests >
+Referral "*" -right- "0..1" HealthcareProfessional : Requests >
+HealthcareProfessional "0..1" -up- "*" Referral : Issues >
+ExternalPhysician "0..1" -down- "*" Referral : Issues >
+note left of Referral
+  {xor} issued by exactly one
+  HealthcareProfessional or
+  ExternalPhysician
+end note
+
+' --- Professional side (right) ---
+HealthcareProfessional "*" -up- "*" Specialty : Practices-in >
+HealthcareProfessional "1" *-down- "*" Schedule : Works >
+Schedule "*" -down- "1" ClinicLocation : Held-at >
+HealthcareProfessional -up-|> ClinicStaff
+AdministrativeStaff -up-|> ClinicStaff
+ClinicStaff "1" -right- "*" ActivityLogEntry : Performs >
+ActivityLogEntry "*" -- "0..1" Patient : Concerns >
+
+' --- Clinical (bottom) ---
+Appointment "1" -down- "0..1" Consultation : Produces >
+ClinicalRecord "1" *-right- "*" Consultation : Contains >
+Consultation "1" -right- "*" Prescription : Issues >
+Prescription "1" *-down- "1..*" PrescriptionLineItem : Contains >
+PrescriptionLineItem "*" -down- "1" Medication : Prescribes >
+
+' --- Billing (bottom) ---
+Appointment "1" -down- "0..1" Invoice : Billed-by >
+Invoice "1" -down- "*" Payment : Settled-by >
+@enduml

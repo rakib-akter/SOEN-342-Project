@@ -1,0 +1,51 @@
+@startuml SSD2_ConductConsultation
+title SSD - UC2: Conduct Consultation (success and failure scenarios)
+hide footbox
+skinparam sequenceMessageAlign center
+
+actor ":HealthcareProfessional" as hcp
+participant ":System" as sys
+
+note over hcp, sys : Precondition: professional is authenticated with clinical access
+
+hcp -> sys : startConsultation(appointmentId)
+break patient has not arrived (1a - FAILURE)
+    sys --> hcp : patient has not arrived
+end
+break appointment belongs to another professional (1b - FAILURE)
+    sys --> hcp : access denied (attempt logged)
+end
+break appointment cancelled (1c - FAILURE)
+    sys --> hcp : appointment no longer valid
+end
+sys --> hcp : patient information,\nclinical record history
+
+hcp -> sys : recordObservations(observations)
+hcp -> sys : recordDiagnosis(diagnoses, treatmentRecommendations)
+
+opt prescription needed (4a - extension point "Prescription")
+    note over hcp, sys : <<extend>> Issue Prescription
+    hcp -> sys : startPrescription()
+    loop more medications
+        hcp -> sys : addMedication(medicationId, dosage, frequency)
+        sys --> hcp : medication added
+    end
+end
+
+opt follow-up needed (step 5; skipped in 5a)
+    hcp -> sys : recordFollowUp(followUpRequirements)
+end
+
+loop required clinical information missing (6a)
+    hcp -> sys : endConsultation()
+    alt all required information recorded (main)
+        sys --> hcp : confirmation
+    else observations or diagnosis missing (6a)
+        sys --> hcp : missing information
+        hcp -> sys : recordObservations(observations) /\nrecordDiagnosis(diagnoses, treatmentRecommendations)
+    end
+end
+
+note over hcp, sys : Extension (*a) FAILURE: if the session is interrupted before endConsultation(),\nthe consultation is not recorded and the appointment stays "arrived"
+
+@enduml

@@ -1,0 +1,40 @@
+@startuml SSD3_IssueReferral
+title SSD - UC3: Issue Referral (success and failure scenarios)
+hide footbox
+skinparam sequenceMessageAlign center
+
+actor ":HealthcareProfessional" as hcp
+participant ":System" as sys
+
+note over hcp, sys : Precondition: professional is identified and authenticated
+
+loop patient not yet identified
+    hcp -> sys : findPatient(criteria)
+    alt patient found (main, 2b)
+        sys --> hcp : patient, existing referrals\n(warning if an active referral exists for the same specialty)
+    else no matching patient (2a - FAILURE)
+        sys --> hcp : no matching patient
+        note over hcp, sys : Professional refines the search;\nif the patient is not registered, the use case ends
+    end
+end
+
+loop target not offered at the clinic (4a)
+    hcp -> sys : selectReferralTarget(patientId, specialtyName, professionalId)
+    alt specialty or professional offered (main)
+        sys --> hcp : target accepted
+    else not offered at the clinic (4a - FAILURE)
+        sys --> hcp : specialty or professional not offered
+        note over hcp, sys : Professional selects another;\nif no alternative applies, the use case ends
+    end
+end
+
+loop clinical reason missing or priority invalid (6a)
+    hcp -> sys : submitReferral(clinicalReason, priority)
+    alt valid (main)
+        sys --> hcp : referral details (status "pending")
+    else reason missing or priority invalid (6a)
+        sys --> hcp : invalid referral data
+    end
+end
+
+@enduml

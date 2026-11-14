@@ -1,0 +1,46 @@
+@startuml SSD1_BookAppointment
+title SSD - UC1: Book Appointment (success and failure scenarios)
+hide footbox
+skinparam sequenceMessageAlign center
+
+actor ":AdministrativeStaff" as staff
+participant ":System" as sys
+
+note over staff, sys : Precondition: user (administrative staff or patient) is identified and authenticated;\na patient booking for themselves follows the same flow
+
+loop patient not yet identified
+    staff -> sys : findPatient(criteria)
+    alt one or more patients match (main, 3b)
+        sys --> staff : matching patients
+    else no patient matches (3a - FAILURE)
+        sys --> staff : no patient found
+        note over staff, sys : Staff refines the search;\nif the patient is not registered, the use case ends
+    end
+end
+
+loop no suitable slot yet
+    staff -> sys : requestAvailableSlots(patientId, serviceId,\nprofessionalId, locationId, date)
+    break service requires a referral and patient has none active (5a - FAILURE)
+        sys --> staff : referral required
+        note over staff, sys : Use case ends without booking an appointment
+    end
+    alt slots available (main, 5b)
+        sys --> staff : available time slots,\nactive referrals (if service requires one)
+    else no slot on requested date (5c - FAILURE)
+        sys --> staff : no slots available
+        note over staff, sys : Staff retries with another date or professional;\nif no option suits the patient, the use case ends
+    else professional not at that location on that date (5d)
+        sys --> staff : locations where professional is scheduled
+    end
+end
+
+loop selected slot was taken meanwhile (7a)
+    staff -> sys : bookAppointment(startTime, referralId)
+    alt slot still free (main)
+        sys --> staff : confirmation with appointment details
+    else slot no longer available (7a)
+        sys --> staff : slot unavailable, updated slots
+    end
+end
+
+@enduml

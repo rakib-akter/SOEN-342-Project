@@ -1,6 +1,8 @@
 @startuml Use-case Diagram
 
 left to right direction
+skinparam nodesep 30
+skinparam ranksep 80
 
 skinparam usecase {
     BackgroundColor<<critical>> #F8CECC
@@ -12,42 +14,58 @@ actor "Administrative Staff" as staff
 actor "Healthcare Professional" as hcp
 
 rectangle "Appointment Tracking System" {
-    usecase "Confirm Appointment" as ConfirmAppointment <<non-critical>>
     usecase "Book Appointment" as BookAppointment <<critical>>
+    usecase "Join Waitlist" as JoinWaitlist <<non-critical>>
+    usecase "Offer Appointment to\na Waitlisted Patient" as OfferWaitlistAppointment <<non-critical>>
+    usecase "Search Availability" as SearchAvailability <<critical>>
     usecase "Reschedule Appointment" as RescheduleAppointment <<non-critical>>
     usecase "Cancel Appointment" as CancelAppointment <<non-critical>>
+    usecase "Confirm Appointment" as ConfirmAppointment <<non-critical>>
 
-    usecase "Manage Patient Information" as ManagePatient <<non-critical>>
+    usecase "Make Availability" as MakeAvailability <<critical>>
+    usecase "Import Availability from CSV" as ImportCSV <<non-critical>>
+    usecase "Export Availability to CSV" as ExportCSV <<non-critical>>
+    usecase "Manage Waitlist" as ManageWaitlist <<non-critical>>
     usecase "Register Patient Arrival" as RegisterPatientArrival <<critical>>
+    usecase "Manage Patient Information" as ManagePatient <<non-critical>>
     usecase "Process Billing" as ProcessBilling <<non-critical>>
-
     usecase "Record External Referral" as RecordReferral <<non-critical>>
-    usecase "Issue Referral" as IssueReferral <<critical>>
 
     usecase "Conduct Consultation" as ConductConsultation <<critical>>
-    usecase "Issue Prescription" as IssuePrescription <<non-critical>>
+    usecase "Issue Referral" as IssueReferral <<critical>>
     usecase "Manage Professional Information" as ManageProfessionalInformation <<non-critical>>
-    usecase "Manage Professional Schedule" as ManageProfessionalSchedule <<non-critical>>
+
+    usecase "Allocate Resources" as AllocateResources <<non-critical>>
+    usecase "Issue Prescription" as IssuePrescription <<non-critical>>
 }
 
-patient -- ConfirmAppointment
 patient -- BookAppointment
 patient -- RescheduleAppointment
+patient -- ConfirmAppointment
 patient -- CancelAppointment
 
-staff -- BookAppointment
-staff -- RescheduleAppointment
-staff -- CancelAppointment
-staff -- ManagePatient
+staff -- MakeAvailability
 staff -- RegisterPatientArrival
+staff -- ImportCSV
 staff -- ProcessBilling
+staff -- ManageWaitlist
+staff -- BookAppointment
+staff -- SearchAvailability
+staff -- RescheduleAppointment
+staff -- ManagePatient
 staff -- RecordReferral
+staff -- ExportCSV
+staff -- CancelAppointment
 
-hcp -- IssueReferral
 hcp -- ConductConsultation
+hcp -- IssueReferral
 hcp -- ManageProfessionalInformation
-hcp -- ManageProfessionalSchedule
+hcp -- MakeAvailability
 
+BookAppointment .> SearchAvailability : <<include>>
+BookAppointment <.. JoinWaitlist : <<extend>>
+BookAppointment <.. AllocateResources : <<extend>>
+CancelAppointment <.. OfferWaitlistAppointment : <<extend>>
 ConductConsultation <.. IssuePrescription : <<extend>>
 
 @enduml

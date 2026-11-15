@@ -1,8 +1,17 @@
 @startuml
+!pragma layout elk
 hide circle
 hide empty members
-skinparam linetype polyline
-
+skinparam nodesep 60
+skinparam ranksep 70
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor White
+  BorderColor #555555
+  ArrowColor #444444
+}
 
 class Patient {
   patientId : String

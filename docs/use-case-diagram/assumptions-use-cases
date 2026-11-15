@@ -11,4 +11,15 @@
 9. Clinic locations already exist in the system.
 10. All healthcare professionals (physicians, specialists, nurses) can do the same things in the system.
 11. External systems (RAMQ, pharmacies, provincial systems) are out of scope and not shown as actors.
-12. Authorized clinic staff depends in this context. Healthcare Professional for patient's medical actions and Administrative Staff for the rest
+12. Authorized clinic staff depends in this context. Healthcare Professional for patient's medical actions and Administrative Staff for the rest.
+
+### Added in Iteration 2
+
+13. Make Availability replaces Manage Professional Schedule from iteration 1, since they were the same thing. Professionals make their own availability, and staff can make it for a professional (date range, repeat pattern, start and end time). Changing or removing availability isn't modelled yet because iteration 2 only talks about creating it.
+14. Booking always goes through Search Availability, so it's an include. Staff can also search availability directly, without booking anything.
+15. Staff are the ones who import and export availabilities with CSV. The system starts empty, so importing is how the first data gets in.
+16. Join Waitlist extends Book Appointment when there's no slot that works for the patient (UC1 extension 5c). The patient asks the admin staff to put them on it, for a specific professional, specialty, or date range.
+17. Waitlist offers only happen when an appointment gets cancelled. Staff call the patient to offer it, and if the patient accepts, staff book it for them and take them off the waitlist.
+18. Manage Waitlist is staff changing a patient's priority or taking them off the waitlist, for example if they said no to an offer.
+19. Allocate Resources extends Book Appointment only when the service needs resources (a room, equipment, or someone like a nurse). Resources come from a set list, and human resources are roles, not specific people. It has no actor since it only happens during booking.
+20. A use case is critical if the system can't do its main job without it. Search Availability and Make Availability are critical because you can't book anything without slots or without finding them. Import and Export CSV are non-critical since they're just a faster way to load or save availabilities, and Make Availability already covers creating them. The waitlist and resource ones are non-critical too since booking still works without them.

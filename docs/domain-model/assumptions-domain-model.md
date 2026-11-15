@@ -1,0 +1,10 @@
+## Domain Model Assumptions (Iteration 2)
+
+These complement the use-case assumptions (numbers like "UC 15" refer to that file for more context :).
+
+1. A professional's availability (their schedule) is made of dated time slots at one of the clinic locations where they practise. The repeat pattern used in Make Availability is only used to generate the slots and isn't stored. Make Availability also takes a slot length (like 30 min) and splits the time range into equal slots. Imported slots keep the start and end from the file.
+2. An appointment takes its date, time and location from the slot it occupies. A slot can only have one active (non-cancelled) appointment at a time, so cancelling an appointment frees its slot.
+3. When a slot is freed, the eligible waitlisted patients are those whose entry matches it (same professional, specialty, or date range, as in UC 16), offered in order of priority.
+4. The waitlist entry's status (waiting, offered, booked, removed) is enough to follow the phone offer. When the patient accepts, the entry is marked booked, which takes them off the waitlist (UC 17). Individual offers aren't recorded separately.
+5. Each resource has a type (room, equipment or role). Since roles aren't specific people (UC 19), the system doesn't check which staff member fills a role.
+6. Since the system starts empty (UC 15), importing availability creates any professional or specialty in the file that doesn't exist yet. This is the one exception to UC 6. Their other details are completed later through Manage Professional Information. The CSV has no location, so staff choose the clinic location when importing.

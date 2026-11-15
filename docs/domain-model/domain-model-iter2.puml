@@ -1,0 +1,204 @@
+@startuml
+!pragma layout elk
+hide circle
+hide empty members
+skinparam nodesep 60
+skinparam ranksep 70
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor White
+  BorderColor #555555
+  ArrowColor #444444
+}
+
+  class Patient {
+    patientId : String
+    firstName : String
+    lastName : String
+    dateOfBirth : Date
+    phoneNumber : String
+  }
+  abstract class Insurance {
+    insuranceNumber : String
+  }
+  class RAMQInsurance
+  class PrivateInsurance {
+    insurerName : String
+  }
+  class ClinicalRecord
+
+  abstract class ClinicStaff {
+    employeeId : String
+    firstName : String
+    lastName : String
+  }
+  class HealthcareProfessional {
+    licenseNumber : String
+    title : String
+    profession : Profession
+  }
+  class AdministrativeStaff
+  class Specialty {
+    name : String
+  }
+  class AvailabilitySlot {
+    date : Date
+    startTime : Time
+    endTime : Time
+    status : SlotStatus
+  }
+  class ClinicLocation {
+    name : String
+    address : String
+  }
+  class ActivityLogEntry {
+    timestamp : DateTime
+    action : String
+  }
+
+  class Appointment {
+    status : AppointmentStatus
+    arrivalTime : Time
+  }
+  class MedicalService {
+    name : String
+    requiresReferral : Boolean
+    isInsured : Boolean
+    fee : Money
+  }
+  class Resource {
+    name : String
+    type : ResourceType
+  }
+  class WaitlistEntry {
+    priority : Integer
+    dateRangeStart : Date [0..1]
+    dateRangeEnd : Date [0..1]
+    status : WaitlistStatus
+  }
+  class Referral {
+    clinicalReason : String
+    priority : Priority
+    status : ReferralStatus
+  }
+  class ExternalPhysician {
+    firstName : String
+    lastName : String
+    licenseNumber : String
+  }
+
+  class Consultation {
+    observations : String
+    diagnoses : String
+    treatmentRecommendations : String
+    followUpRequirements : String
+  }
+  class Prescription {
+    dateIssued : Date
+  }
+  class PrescriptionLineItem {
+    dosage : String
+    frequency : String
+  }
+  class Medication {
+    name : String
+  }
+
+  class Invoice {
+    invoiceNumber : String
+    amount : Money
+    status : InvoiceStatus
+  }
+  class Payment {
+    date : Date
+    amount : Money
+    method : PaymentMethod
+  }
+
+' Patients
+Insurance <|-- RAMQInsurance
+Insurance <|-- PrivateInsurance
+Patient "1" -- "0..*" Insurance : Covered-by >
+Patient "1" -- "1" ClinicalRecord : Has >
+
+' Staff and availability
+ClinicStaff <|-- HealthcareProfessional
+ClinicStaff <|-- AdministrativeStaff
+HealthcareProfessional "*" -- "*" Specialty : Practices-in >
+HealthcareProfessional "1" -- "*" AvailabilitySlot : Offers >
+AvailabilitySlot "*" -- "1" ClinicLocation : Held-at >
+HealthcareProfessional "*" -- "1..*" ClinicLocation : Practices-at >
+ClinicStaff "1" -- "*" ActivityLogEntry : Performs >
+ActivityLogEntry "*" -- "0..1" Patient : Concerns >
+
+' Scheduling hub
+Patient "1" -- "*" Appointment : Attends >
+HealthcareProfessional "1" -- "*" Appointment : Conducts >
+Appointment "*" -- "1" MedicalService : Is-for >
+Appointment "*" -- "1" AvailabilitySlot : Occupies >
+
+' Resources
+MedicalService "*" -- "*" Resource : Requires >
+Appointment "*" -- "*" Resource : Allocates >
+
+' Waitlist
+Patient "1" -- "*" WaitlistEntry : Waits-in >
+WaitlistEntry "*" -- "0..1" HealthcareProfessional : For >
+WaitlistEntry "*" -- "0..1" Specialty : For >
+
+' Referrals
+Referral "*" -- "1" Patient : Refers >
+Referral "0..1" -- "*" Appointment : Results-in >
+Referral "*" -- "0..1" Specialty : Requests >
+Referral "*" -- "0..1" HealthcareProfessional : Requests >
+HealthcareProfessional "0..1" -- "*" Referral : Issues >
+ExternalPhysician "0..1" -- "*" Referral : Issues >
+
+' Clinical
+Appointment "1" -- "0..1" Consultation : Produces >
+ClinicalRecord "1" *-- "*" Consultation : Contains >
+Consultation "1" -- "*" Prescription : Issues >
+Prescription "1" *-- "1..*" PrescriptionLineItem : Contains >
+PrescriptionLineItem "*" -- "1" Medication : Prescribes >
+
+' Billing
+Appointment "1" -- "0..1" Invoice : Billed-by >
+Invoice "1" -- "*" Payment : Settled-by >
+
+' Arrival, requester, follow-up
+AdministrativeStaff "0..1" -[norank]- "*" Appointment : Registers-arrival-for >
+Patient "0..1" -[norank]- "*" Appointment : Requests >
+ClinicStaff "0..1" -[norank]- "*" Appointment : Requests >
+Consultation "0..1" -[norank]- "*" Appointment : Requests-follow-up >
+
+note bottom of Referral
+  Issued by either a HealthcareProfessional
+  or an ExternalPhysician, never both
+end note
+note top of Specialty
+  A Referral requests either a Specialty
+  or a specific HealthcareProfessional, never both
+end note
+note bottom of Appointment
+  Requested by either the Patient
+  or a ClinicStaff member, never both.
+  Date, time and location come from the slot.
+  The slot's HealthcareProfessional is the one
+  who conducts the appointment.
+end note
+note bottom of AvailabilitySlot
+  At most one non-cancelled Appointment per slot.
+  Its ClinicLocation must be one where its
+  HealthcareProfessional practises.
+end note
+note bottom of WaitlistEntry
+  Targets a HealthcareProfessional, a Specialty,
+  or a date range (at least one)
+end note
+note bottom of Resource
+  Predefined list. Human resources
+  (e.g. Nurse) are roles, not ClinicStaff.
+end note
+@enduml

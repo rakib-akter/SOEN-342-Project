@@ -1,0 +1,26 @@
+@startuml ssd5-make-availability
+title SSD - Make Availability (success and failure scenarios)
+hide footbox
+skinparam sequenceMessageAlign center
+
+actor ":AdministrativeStaff" as staff
+participant ":System" as sys
+
+note over staff, sys : Precondition: user (administrative staff, or the healthcare professional\nfor their own availability) is identified and authenticated;\nthe professional and the clinic location exist
+
+loop availability not created yet
+    staff -> sys : makeAvailability(professionalId, locationId, fromDate, toDate,\nrepeatPattern, startTime, endTime, slotLength)
+    alt slots generated (main)
+        sys --> staff : created slots,\ntimes skipped because they overlap existing slots
+    else professional does not practise at this location (FAILURE)
+        sys --> staff : professional does not practise at this location
+    else invalid date range, time range or slot length (FAILURE)
+        sys --> staff : invalid availability parameters
+    else repeat pattern matches no date in the range (FAILURE)
+        sys --> staff : no slots generated
+    end
+end
+
+note over staff, sys : Example: Dr. X, every Monday from 2026-11-01 to 2026-11-30,\n09:00-12:00, 30 min slots -> 5 Mondays x 6 slots = 30 slots
+
+@enduml

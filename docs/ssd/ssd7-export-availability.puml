@@ -1,0 +1,22 @@
+@startuml ssd7-export-availability
+title SSD - Export Availability to CSV (success and failure scenarios)
+hide footbox
+skinparam sequenceMessageAlign center
+
+actor ":AdministrativeStaff" as staff
+participant ":System" as sys
+
+note over staff, sys : Precondition: staff is identified and authenticated
+
+staff -> sys : exportAvailability(filePath)
+alt availability exists and file written (main)
+    sys --> staff : export summary: number of slots written
+else no availability in the system (FAILURE)
+    sys --> staff : nothing to export
+    note over staff, sys : Use case ends; no file is written
+else file cannot be written (FAILURE)
+    sys --> staff : cannot write file
+    note over staff, sys : Use case ends
+end
+
+@enduml

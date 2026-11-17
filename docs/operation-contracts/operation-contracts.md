@@ -1,10 +1,15 @@
 # System Operations and Operation Contracts
 
-Iteration 1 — Appointment Tracking System
+Iteration 2 — Appointment Tracking System
 
-The system operations below are taken from the system sequence diagrams (SSD1–SSD3). Each one is an event that crosses the system boundary from an actor to the System, treated as a black box. Together they form the public interface of the System.
+The system operations below are taken from the system sequence diagrams (SSD1–SSD7). Each one is an event that crosses the system boundary from an actor to the System, treated as a black box. Together they form the public interface of the System.
 
-All class, attribute and association names in the contracts are taken from the UML domain model.
+All class, attribute and association names in the contracts are taken from the Iteration 2 UML domain model (`domain-model-iter2.puml`).
+
+**Changes since Iteration 1:**
+- SSD1 Book Appointment now includes Search Availability and books a dated AvailabilitySlot. `requestAvailableSlots` is replaced by `selectMedicalService` (CO2) and `searchAvailability` (CO13), and CO3 `bookAppointment` now takes a slot.
+- CO4 now reads the appointment's date from its slot, since Appointment no longer has a date.
+- New SSDs and contracts: Search Availability, Make Availability, Import Availability from CSV, Export Availability to CSV, and Join Waitlist (an extension of Book Appointment).
 
 ## 1. System Operations
 
@@ -12,8 +17,8 @@ All class, attribute and association names in the contracts are taken from the U
                          System
 ----------------------------------------------------------------
 findPatient(criteria)
-requestAvailableSlots(patientId, serviceId, professionalId, locationId, date)
-bookAppointment(startTime, referralId)
+selectMedicalService(patientId, serviceId)
+bookAppointment(slotId, referralId)
 startConsultation(appointmentId)
 recordObservations(observations)
 recordDiagnosis(diagnoses, treatmentRecommendations)
@@ -23,24 +28,34 @@ recordFollowUp(followUpRequirements)
 endConsultation()
 selectReferralTarget(patientId, specialtyName, professionalId)
 submitReferral(clinicalReason, priority)
+searchAvailability(professionalId, specialtyName, locationId, fromDate, toDate)
+makeAvailability(professionalId, locationId, fromDate, toDate, repeatPattern, startTime, endTime, slotLength)
+importAvailability(filePath, locationId)
+exportAvailability(filePath)
+joinWaitlist(professionalId, specialtyName, fromDate, toDate, priority)
 ```
 
-| Operation | Use case(s) | SSD | Type |
-|---|---|---|---|
-| findPatient | UC1 Book Appointment, UC3 Issue Referral | SSD1, SSD3 | Query |
-| requestAvailableSlots | UC1 Book Appointment | SSD1 | Query |
-| bookAppointment | UC1 Book Appointment | SSD1 | State change |
-| startConsultation | UC2 Conduct Consultation | SSD2 | State change |
-| recordObservations | UC2 Conduct Consultation | SSD2 | State change |
-| recordDiagnosis | UC2 Conduct Consultation | SSD2 | State change |
-| startPrescription | Issue Prescription (extends UC2) | SSD2 | State change |
-| addMedication | Issue Prescription (extends UC2) | SSD2 | State change |
-| recordFollowUp | UC2 Conduct Consultation | SSD2 | State change |
-| endConsultation | UC2 Conduct Consultation | SSD2 | State change |
-| selectReferralTarget | UC3 Issue Referral | SSD3 | Query |
-| submitReferral | UC3 Issue Referral | SSD3 | State change |
+| Contract | Operation | Use case(s) | SSD | Type |
+|---|---|---|---|---|
+| CO1 | findPatient | Book Appointment, Issue Referral | SSD1, SSD3 | Query |
+| CO2 | selectMedicalService | Book Appointment | SSD1 | Query |
+| CO3 | bookAppointment | Book Appointment (+ Allocate Resources) | SSD1 | State change |
+| CO4 | startConsultation | Conduct Consultation | SSD2 | State change |
+| CO5 | recordObservations | Conduct Consultation | SSD2 | State change |
+| CO6 | recordDiagnosis | Conduct Consultation | SSD2 | State change |
+| CO7 | startPrescription | Issue Prescription (extends Conduct Consultation) | SSD2 | State change |
+| CO8 | addMedication | Issue Prescription (extends Conduct Consultation) | SSD2 | State change |
+| CO9 | recordFollowUp | Conduct Consultation | SSD2 | State change |
+| CO10 | endConsultation | Conduct Consultation | SSD2 | State change |
+| CO11 | selectReferralTarget | Issue Referral | SSD3 | Query |
+| CO12 | submitReferral | Issue Referral | SSD3 | State change |
+| CO13 | searchAvailability | Search Availability (included by Book Appointment) | SSD4, SSD1 | Query |
+| CO14 | makeAvailability | Make Availability | SSD5 | State change |
+| CO15 | importAvailability | Import Availability from CSV | SSD6 | State change |
+| CO16 | exportAvailability | Export Availability to CSV | SSD7 | Query |
+| CO17 | joinWaitlist | Join Waitlist (extends Book Appointment) | SSD1 | State change |
 
-`findPatient` is shared by two use cases, so it is listed and contracted once.
+`findPatient` and `searchAvailability` each appear in two SSDs, so each is listed and contracted once.
 
 ## 2. Operation Contracts
 
@@ -63,49 +78,52 @@ Preconditions are the obligations of the client (the caller). Postconditions are
 
 ---
 
-### CO2: requestAvailableSlots
+### CO2: selectMedicalService
 
-**Operation:** requestAvailableSlots(patientId: String, serviceId: String, professionalId: String, locationId: String, date: Date)
+**Operation:** selectMedicalService(patientId: String, serviceId: String)
 
-**Cross References:** UC1 Book Appointment (steps 4–5, extensions 5a, 5b, 5c, 5d)
+**Cross References:** UC1 Book Appointment (steps 4–5, extensions 5a, 5b)
 
 **Preconditions:**
 - The user (AdministrativeStaff, or a Patient booking for themselves) is identified and authenticated.
 - A Patient with `patientId` exists.
-- A MedicalService, HealthcareProfessional and ClinicLocation exist for `serviceId`, `professionalId` and `locationId`.
+- A MedicalService with `serviceId` exists.
 
 **Postconditions:**
-- None. This is a query operation. The System returns the free time slots on `date`, computed from the professional's Schedule held at the ClinicLocation (Works, Held-at) minus the existing Appointments the professional conducts on that date. If MedicalService.requiresReferral is true, it also returns the patient's active Referral instances.
-- The System retains the patient, service, professional, location and date as the current booking request, for use by bookAppointment.
+- None. This is a query operation. If MedicalService.requiresReferral is true, the System returns the patient's active Referral instances (Refers). If there are none, it reports that a referral is required (extension 5a).
+- The System retains the patient and the medical service as the current booking request, for use by searchAvailability, joinWaitlist and bookAppointment.
 
 ---
 
 ### CO3: bookAppointment
 
-**Operation:** bookAppointment(startTime: Time, referralId: String [0..1])
+**Operation:** bookAppointment(slotId: String, referralId: String [0..1])
 
-**Cross References:** UC1 Book Appointment (steps 6–7, extensions 5b, 7a)
+**Cross References:** UC1 Book Appointment (steps 6–7, extensions 5b, 7a); Allocate Resources (extends Book Appointment)
 
 **Preconditions:**
-- A booking request is underway: requestAvailableSlots has returned available slots for a patient, service, professional, location and date.
-- `startTime` is one of the slots returned.
+- A booking request is underway: selectMedicalService succeeded for a patient and a medical service.
+- An AvailabilitySlot `s` with `slotId` exists, and `s.status` is AVAILABLE.
 - If the MedicalService requires a referral, `referralId` identifies one of the patient's active Referrals.
+- Every Resource of type room or equipment that the MedicalService requires (Requires) is not allocated to another non-cancelled Appointment whose slot overlaps `s`.
 
 **Postconditions:**
 - An Appointment instance `a` was created. *(instance creation)*
-- `a.date` was set to the requested date and `a.startTime` was set to `startTime`. *(attribute modification)*
 - `a.status` was set to BOOKED if the booking user is AdministrativeStaff, or to CONFIRMED if the booking user is the Patient. *(attribute modification)*
+- `a` was associated with `s`. *(association formed — Occupies)*
+- `s.status` was set to BOOKED. *(attribute modification)*
 - `a` was associated with the Patient. *(association formed — Attends)*
-- `a` was associated with the HealthcareProfessional. *(association formed — Conducts)*
+- `a` was associated with the HealthcareProfessional who offers `s`. *(association formed — Conducts)*
 - `a` was associated with the MedicalService. *(association formed — Is-for)*
-- `a` was associated with the ClinicLocation. *(association formed — Takes-place-at)*
+- `a` was associated with the booking user, either the Patient or the ClinicStaff member. *(association formed — Requests)*
 - If `referralId` was given, `a` was associated with the Referral, based on `referralId` match. *(association formed — Results-in)*
+- For each Resource `r` that the MedicalService requires, `a` was associated with `r`. *(association formed — Allocates; this is the Allocate Resources extension)*
 - An ActivityLogEntry instance `e` was created. *(instance creation)*
 - `e.timestamp` was set to the current date and time, and `e.action` was set to "book appointment". *(attribute modification)*
 - If the booking user is AdministrativeStaff, `e` was associated with that staff member. *(association formed — Performs)*
 - `e` was associated with the Patient. *(association formed — Concerns)*
 
-**Note:** The booked time becomes unavailable because the new Appointment is now among the professional's appointments. The Schedule itself is not modified.
+**Note:** The appointment's date, time and clinic location are those of `s` (Occupies, Held-at), so they are not set on the Appointment itself.
 
 ---
 
@@ -117,7 +135,7 @@ Preconditions are the obligations of the client (the caller). Postconditions are
 
 **Preconditions:**
 - The HealthcareProfessional is identified and authenticated with clinical access.
-- An Appointment `a` with `appointmentId` exists, and `a.date` is today.
+- An Appointment `a` with `appointmentId` exists, and the AvailabilitySlot that `a` occupies has today's date (Occupies).
 - `a.status` is ARRIVED.
 - `a` is associated with this HealthcareProfessional (Conducts).
 
@@ -267,7 +285,136 @@ Preconditions are the obligations of the client (the caller). Postconditions are
 - `e.timestamp` was set to the current date and time, and `e.action` was set to "issue referral". *(attribute modification)*
 - `e` was associated with the HealthcareProfessional *(association formed — Performs)* and with the Patient *(association formed — Concerns)*.
 
+---
+
+### CO13: searchAvailability
+
+**Operation:** searchAvailability(professionalId: String [0..1], specialtyName: String [0..1], locationId: String [0..1], fromDate: Date [0..1], toDate: Date [0..1])
+
+**Cross References:** Search Availability (SSD4); UC1 Book Appointment, which includes it (step 5, extension 5c)
+
+**Preconditions:**
+- The user (AdministrativeStaff, or a Patient booking for themselves) is identified and authenticated.
+- Any HealthcareProfessional, Specialty or ClinicLocation given exists.
+- If both dates are given, `fromDate` is not after `toDate`.
+
+**Postconditions:**
+- None. This is a query operation. The System returns the AvailabilitySlot instances whose status is AVAILABLE and that match every criterion given:
+  - offered by the HealthcareProfessional with `professionalId` (Offers);
+  - offered by a HealthcareProfessional who practises the Specialty named `specialtyName` (Offers, Practices-in);
+  - held at the ClinicLocation with `locationId` (Held-at);
+  - with a date between `fromDate` and `toDate`.
+- The slots are returned in order of date and start time. No objects are created, modified, or associated.
+
+---
+
+### CO14: makeAvailability
+
+**Operation:** makeAvailability(professionalId: String, locationId: String, fromDate: Date, toDate: Date, repeatPattern: RepeatPattern, startTime: Time, endTime: Time, slotLength: Duration)
+
+**Cross References:** Make Availability (SSD5)
+
+**Preconditions:**
+- The user is identified and authenticated as AdministrativeStaff, or as the HealthcareProfessional with `professionalId` making their own availability.
+- A HealthcareProfessional `h` with `professionalId` and a ClinicLocation `l` with `locationId` exist, and `h` practises at `l` (Practices-at).
+- `fromDate` is not after `toDate`, `startTime` is before `endTime`, and `slotLength` is greater than zero and no longer than the time between `startTime` and `endTime`.
+
+**Postconditions:**
+For each date `d` from `fromDate` to `toDate` that matches `repeatPattern`, and each consecutive interval of length `slotLength` from `startTime` that ends no later than `endTime` and does not overlap an existing AvailabilitySlot of `h` on `d`:
+- An AvailabilitySlot instance `s` was created. *(instance creation)*
+- `s.date` was set to `d`, `s.startTime` and `s.endTime` were set to the interval's start and end, and `s.status` was set to AVAILABLE. *(attribute modification)*
+- `s` was associated with `h`. *(association formed — Offers)*
+- `s` was associated with `l`. *(association formed — Held-at)*
+
+Then, once for the whole operation:
+- An ActivityLogEntry instance `e` was created. *(instance creation)*
+- `e.timestamp` was set to the current date and time, and `e.action` was set to "make availability". *(attribute modification)*
+- `e` was associated with the ClinicStaff member who made the availability. *(association formed — Performs)*
+
+**Notes:**
+- `repeatPattern` gives either day(s) of the week or a day of the month. It is only used to generate the slots and is not stored (domain model assumption 1).
+- Example: Dr. X, every Monday from 2026-11-01 to 2026-11-30, 09:00–12:00, 30-minute slots, creates 6 slots on each of the 5 Mondays, so 30 AvailabilitySlots.
+
+---
+
+### CO15: importAvailability
+
+**Operation:** importAvailability(filePath: String, locationId: String)
+
+**Cross References:** Import Availability from CSV (SSD6)
+
+**Preconditions:**
+- The AdministrativeStaff member is identified and authenticated.
+- A ClinicLocation `l` with `locationId` exists.
+- The file at `filePath` can be read and has a header row with the columns First Name, Last Name, Title, Specialty, Date, Start, End.
+
+**Postconditions:**
+For each well-formed row of the file that does not duplicate an existing AvailabilitySlot (same professional, date and start time):
+- If no HealthcareProfessional matches the row's first and last name, a HealthcareProfessional `h` was created, and `h.firstName`, `h.lastName` and `h.title` were set from the row. *(instance creation, attribute modification)*
+- For each specialty name in the row's Specialty field, if no Specialty has that name, a Specialty `sp` was created and `sp.name` was set. *(instance creation, attribute modification)*
+- `h` was associated with each of those Specialty instances, if not already. *(association formed — Practices-in)*
+- `h` was associated with `l`, if not already. *(association formed — Practices-at)*
+- An AvailabilitySlot instance `s` was created. *(instance creation)*
+- `s.date`, `s.startTime` and `s.endTime` were set from the row, and `s.status` was set to AVAILABLE. *(attribute modification)*
+- `s` was associated with `h` *(association formed — Offers)* and with `l` *(association formed — Held-at)*.
+
+Then, once for the whole operation:
+- An ActivityLogEntry instance `e` was created. *(instance creation)*
+- `e.timestamp` was set to the current date and time, and `e.action` was set to "import availability". *(attribute modification)*
+- `e` was associated with the AdministrativeStaff member. *(association formed — Performs)*
+
+**Notes:**
+- Creating professionals and specialties during import is the one exception to Iteration 1 assumption 6, since the system starts empty (domain model assumption 6). Their other details, such as employeeId and licenseNumber, are completed later through Manage Professional Information.
+- Malformed rows and duplicate rows are skipped and reported in the import summary. If the file cannot be read, nothing is imported.
+
+---
+
+### CO16: exportAvailability
+
+**Operation:** exportAvailability(filePath: String)
+
+**Cross References:** Export Availability to CSV (SSD7)
+
+**Preconditions:**
+- The AdministrativeStaff member is identified and authenticated.
+- At least one AvailabilitySlot exists.
+- The file at `filePath` can be written.
+
+**Postconditions:**
+- None on the domain model. This operation creates, modifies and associates no domain objects.
+- The file at `filePath` was written, replacing any existing file. It contains a header row and one row for every AvailabilitySlot in the system, whatever its status, with the columns First Name, Last Name, Title, Specialty, Date, Start, End. The professional's fields come from the HealthcareProfessional who offers the slot (Offers), and the Specialty field lists the professional's specialties (Practices-in), separated by ";".
+
+**Note:** The columns are the same as the import format, so an exported file can be imported again.
+
+---
+
+### CO17: joinWaitlist
+
+**Operation:** joinWaitlist(professionalId: String [0..1], specialtyName: String [0..1], fromDate: Date [0..1], toDate: Date [0..1], priority: Integer)
+
+**Cross References:** Join Waitlist (extends UC1 Book Appointment at extension 5c)
+
+**Preconditions:**
+- The AdministrativeStaff member is identified and authenticated (the patient asks staff to add them).
+- A booking request is underway: selectMedicalService succeeded for a patient.
+- At least one of `professionalId`, `specialtyName`, or a date range is given, and any HealthcareProfessional or Specialty given exists.
+- If both dates are given, `fromDate` is not after `toDate`.
+
+**Postconditions:**
+- A WaitlistEntry instance `w` was created. *(instance creation)*
+- `w.priority` was set to `priority`, `w.dateRangeStart` to `fromDate`, `w.dateRangeEnd` to `toDate`, and `w.status` to WAITING. *(attribute modification)*
+- `w` was associated with the Patient. *(association formed — Waits-in)*
+- If `professionalId` was given, `w` was associated with that HealthcareProfessional. *(association formed — For)*
+- If `specialtyName` was given, `w` was associated with that Specialty. *(association formed — For)*
+- An ActivityLogEntry instance `e` was created. *(instance creation)*
+- `e.timestamp` was set to the current date and time, and `e.action` was set to "join waitlist". *(attribute modification)*
+- `e` was associated with the AdministrativeStaff member *(association formed — Performs)* and with the Patient *(association formed — Concerns)*.
+
 ## 3. Assumptions
 
-1. **Status values.** The status values used in the contracts are the ones named in the fully-dressed use cases and assumptions: AppointmentStatus BOOKED, CONFIRMED, ARRIVED, COMPLETED, CANCELLED, and ReferralStatus PENDING.
+1. **Status values.** AppointmentStatus: BOOKED, CONFIRMED, ARRIVED, COMPLETED, CANCELLED. ReferralStatus: PENDING. SlotStatus: AVAILABLE, BOOKED. WaitlistStatus: WAITING, OFFERED, BOOKED, REMOVED (domain model assumption 4).
 2. **Patient self-booking (CO3).** In the domain model, only ClinicStaff can perform an ActivityLogEntry. When a patient books for themselves, the log entry is linked to the Patient through Concerns only, and no staff member is recorded as performing it.
+3. **Activity logging.** Every operation that changes the domain creates an ActivityLogEntry, except the steps inside a consultation (CO5–CO9), which are logged once by endConsultation. Query operations are not logged. Log entries about availability concern no patient, which the 0..1 multiplicity of Concerns allows.
+4. **Resource conflicts (CO3).** Only rooms and equipment are checked for conflicts with overlapping appointments. Human resources are roles, not specific people, so the system does not check who fills them (domain model assumption 5).
+5. **Matching imported professionals (CO15).** A row's professional is matched to an existing HealthcareProfessional by first and last name.
+6. **Booked appointments CSV.** The PoC imports and exports availability only. The sample booked-appointments and waiting-list CSV files are not imported in this iteration.

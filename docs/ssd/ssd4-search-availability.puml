@@ -1,0 +1,23 @@
+@startuml ssd4-search-availability
+title SSD - Search Availability (success and failure scenarios)
+hide footbox
+skinparam sequenceMessageAlign center
+
+actor ":AdministrativeStaff" as staff
+participant ":System" as sys
+
+note over staff, sys : Precondition: staff is identified and authenticated.\nEvery search criterion is optional; the search returns AVAILABLE slots only
+
+loop no suitable slot found yet
+    staff -> sys : searchAvailability(professionalId, specialtyName,\nlocationId, fromDate, toDate)
+    alt one or more slots match (main)
+        sys --> staff : available slots\n(date, start, end, professional, location)
+    else invalid criteria: unknown professional, specialty or location,\nor fromDate after toDate (FAILURE)
+        sys --> staff : invalid search criteria
+    else no available slot matches (FAILURE)
+        sys --> staff : no available slots
+        note over staff, sys : Staff widens the search (other date range, professional,\nspecialty or location), or the use case ends
+    end
+end
+
+@enduml

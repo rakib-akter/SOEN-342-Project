@@ -1,0 +1,23 @@
+@startuml ssd6-import-availability
+title SSD - Import Availability from CSV (success and failure scenarios)
+hide footbox
+skinparam sequenceMessageAlign center
+
+actor ":AdministrativeStaff" as staff
+participant ":System" as sys
+
+note over staff, sys : Precondition: staff is identified and authenticated; the clinic location exists.\nThe CSV has no location column, so staff choose the location for the whole file
+
+staff -> sys : importAvailability(filePath, locationId)
+alt file read (main)
+    sys --> staff : import summary: slots imported,\nprofessionals and specialties created, rows skipped
+    note over staff, sys : Malformed rows and rows duplicating an existing slot\nare skipped and listed in the summary
+else file not found or unreadable (FAILURE)
+    sys --> staff : cannot read file
+    note over staff, sys : Use case ends; nothing is imported
+else clinic location not found (FAILURE)
+    sys --> staff : unknown clinic location
+    note over staff, sys : Use case ends; nothing is imported
+end
+
+@enduml

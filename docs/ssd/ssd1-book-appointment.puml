@@ -1,4 +1,4 @@
-@startuml SSD1_BookAppointment
+@startuml ssd1-book-appointment
 title SSD - UC1: Book Appointment (success and failure scenarios)
 hide footbox
 skinparam sequenceMessageAlign center
@@ -18,28 +18,39 @@ loop patient not yet identified
     end
 end
 
+staff -> sys : selectMedicalService(patientId, serviceId)
+break service requires a referral and patient has none active (5a - FAILURE)
+    sys --> staff : referral required
+    note over staff, sys : Use case ends without booking an appointment
+end
+sys --> staff : service accepted,\nactive referrals (if the service requires one) (5b)
+
 loop no suitable slot yet
-    staff -> sys : requestAvailableSlots(patientId, serviceId,\nprofessionalId, locationId, date)
-    break service requires a referral and patient has none active (5a - FAILURE)
-        sys --> staff : referral required
-        note over staff, sys : Use case ends without booking an appointment
-    end
-    alt slots available (main, 5b)
-        sys --> staff : available time slots,\nactive referrals (if service requires one)
-    else no slot on requested date (5c - FAILURE)
-        sys --> staff : no slots available
-        note over staff, sys : Staff retries with another date or professional;\nif no option suits the patient, the use case ends
-    else professional not at that location on that date (5d)
-        sys --> staff : locations where professional is scheduled
+    note over staff, sys : <<include>> Search Availability (see SSD4)
+    staff -> sys : searchAvailability(professionalId, specialtyName,\nlocationId, fromDate, toDate)
+    alt slots available (main)
+        sys --> staff : available slots
+    else no suitable slot (5c - FAILURE)
+        sys --> staff : no available slots
+        opt patient asks to join the waitlist (<<extend>> Join Waitlist)
+            staff -> sys : joinWaitlist(professionalId, specialtyName,\nfromDate, toDate, priority)
+            sys --> staff : waitlist entry confirmation
+            note over staff, sys : Use case ends without booking an appointment
+        end
+        note over staff, sys : Otherwise staff searches again, or the use case ends
     end
 end
 
-loop selected slot was taken meanwhile (7a)
-    staff -> sys : bookAppointment(startTime, referralId)
-    alt slot still free (main)
-        sys --> staff : confirmation with appointment details
-    else slot no longer available (7a)
+loop selected slot cannot be booked
+    staff -> sys : bookAppointment(slotId, referralId)
+    alt slot still available and required resources free (main)
+        note over staff, sys : <<extend>> Allocate Resources: if the service requires resources,\nthe system allocates them during booking
+        sys --> staff : confirmation with appointment details\n(and allocated resources)
+    else slot taken before booking was completed (7a)
         sys --> staff : slot unavailable, updated slots
+    else a required room or equipment is taken at that time (FAILURE)
+        sys --> staff : required resources unavailable for this slot
+        note over staff, sys : Staff selects another slot
     end
 end
 

@@ -91,7 +91,7 @@ Preconditions are the obligations of the client (the caller). Postconditions are
 
 **Postconditions:**
 - None. This is a query operation. If MedicalService.requiresReferral is true, the System returns the patient's active Referral instances (Refers). If there are none, it reports that a referral is required (extension 5a).
-- The System retains the patient and the medical service as the current booking request, for use by searchAvailability, joinWaitlist and bookAppointment.
+- The System retains the patient and the medical service as the current booking request, for use by joinWaitlist and bookAppointment.
 
 ---
 
@@ -351,7 +351,7 @@ Then, once for the whole operation:
 **Postconditions:**
 For each well-formed row of the file that does not duplicate an existing AvailabilitySlot (same professional, date and start time):
 - If no HealthcareProfessional matches the row's first and last name, a HealthcareProfessional `h` was created, and `h.firstName`, `h.lastName` and `h.title` were set from the row. *(instance creation, attribute modification)*
-- For each specialty name in the row's Specialty field, if no Specialty has that name, a Specialty `sp` was created and `sp.name` was set. *(instance creation, attribute modification)*
+- For each specialty name in the row's Specialty field (names separated by ";", as in CO16), if no Specialty has that name, a Specialty `sp` was created and `sp.name` was set. *(instance creation, attribute modification)*
 - `h` was associated with each of those Specialty instances, if not already. *(association formed — Practices-in)*
 - `h` was associated with `l`, if not already. *(association formed — Practices-at)*
 - An AvailabilitySlot instance `s` was created. *(instance creation)*
@@ -412,7 +412,7 @@ Then, once for the whole operation:
 
 ## 3. Assumptions
 
-1. **Status values.** AppointmentStatus: BOOKED, CONFIRMED, ARRIVED, COMPLETED, CANCELLED. ReferralStatus: PENDING. SlotStatus: AVAILABLE, BOOKED. WaitlistStatus: WAITING, OFFERED, BOOKED, REMOVED (domain model assumption 4).
+1. **Status values.** AppointmentStatus: BOOKED, CONFIRMED, ARRIVED, COMPLETED, CANCELLED. ReferralStatus: PENDING (a Referral is "active" while its status is PENDING). SlotStatus: AVAILABLE, BOOKED. WaitlistStatus: WAITING, OFFERED, BOOKED, REMOVED (domain model assumption 4).
 2. **Patient self-booking (CO3).** In the domain model, only ClinicStaff can perform an ActivityLogEntry. When a patient books for themselves, the log entry is linked to the Patient through Concerns only, and no staff member is recorded as performing it.
 3. **Activity logging.** Every operation that changes the domain creates an ActivityLogEntry, except the steps inside a consultation (CO5–CO9), which are logged once by endConsultation. Query operations are not logged. Log entries about availability concern no patient, which the 0..1 multiplicity of Concerns allows.
 4. **Resource conflicts (CO3).** Only rooms and equipment are checked for conflicts with overlapping appointments. Human resources are roles, not specific people, so the system does not check who fills them (domain model assumption 5).

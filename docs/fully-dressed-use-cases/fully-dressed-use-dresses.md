@@ -26,8 +26,8 @@
 1. The patient requests an appointment for a medical service.
 2. Staff searches for the patient by insurance number, date of birth, phone number, or partial first and/or last name.
 3. The system presents the matching patient.
-4. Staff enters the requested medical service, healthcare professional, clinic location, and preferred date.
-5. The system verifies that the service does not require a referral, checks the professional's schedule and scheduling constraints, and presents the available time slots.
+4. Staff enters the requested medical service.
+5. The system verifies that the service does not require a referral. Staff searches for available slots by professional, specialty, clinic location and/or date range (includes Search Availability), and the system presents the available slots.
 6. Staff selects a time slot.
 7. The system records the appointment, logs the activity, and presents a confirmation with the appointment details.
 
@@ -45,16 +45,16 @@
 - 5b. The service requires a referral and the patient has an active one.
   1. The system presents the patient's active referrals.
   2. Staff selects the referral. The system links it to the appointment.
-- 5c. Failure: no availability. The professional has no available slot on the requested date.
+- 5c. Failure: no availability. No available slot matches the search.
   1. The system indicates that no slots are available.
-  2. Staff requests another date or another professional in the same specialty. The flow resumes at step 5.
-  3. If no option suits the patient, the use case ends without booking an appointment.
-- 5d. The professional does not practise at the requested location on that date.
-  1. The system indicates this and presents the locations where the professional is scheduled.
-  2. Staff selects a location and the flow resumes at step 5.
+  2. Staff searches again with another date range, professional, specialty or location. The flow resumes at step 5.
+  3. If no option suits the patient, the patient may ask to join the waitlist (Join Waitlist, extend). The use case ends without booking an appointment.
 - 7a. The selected slot was taken before the booking was completed.
   1. The system indicates that the slot is no longer available and presents the updated slots.
   2. The flow resumes at step 6.
+- 7b. The service requires resources (Allocate Resources, extend).
+  1. The system allocates the required resources to the appointment.
+  2. If a required room or equipment is already taken at that time, the system indicates it and the flow resumes at step 6.
 - \*a. At any time, staff cancels the booking.
   1. No appointment is created.
 

@@ -1,0 +1,25 @@
+@startuml book-appointment-select-medical-service
+title Communication Diagram - UC1 Book Appointment: selectMedicalService (CO2)
+skinparam linetype polyline
+
+label " " as start
+rectangle "<u>:AppointmentSystem</u>" as ctrl
+collections "<u>:Patient</u>" as patients
+collections "<u>:MedicalService</u>" as services
+rectangle "<u>service:MedicalService</u>" as service
+rectangle "<u>p:Patient</u>" as p
+rectangle "<u>r:Referral</u>" as r
+
+start -right- ctrl : "selectMedicalService(patientId, serviceId) >"
+
+ctrl -- patients : "1: p := find(patientId) >"
+ctrl -- services : "2: service := find(serviceId) >"
+ctrl -- service : "3: req := requiresReferral() >"
+ctrl -- p : "4: [req] refs := getActiveReferrals() >"
+p -- r : "4.1*: [for each r in referrals]\nactive := isActive() >"
+
+note right of ctrl
+  {currentPatient = p,
+   currentService = service}
+end note
+@enduml

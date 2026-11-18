@@ -1,0 +1,18 @@
+@startuml book-appointment-find-patient
+title Communication Diagram - UC1 Book Appointment: findPatient (CO1)
+skinparam linetype polyline
+
+label " " as start
+rectangle "<u>:AppointmentSystem</u>" as ctrl
+rectangle "<u>p:Patient</u>" as p
+collections "<u>:Insurance</u>" as insurances
+
+start -right- ctrl : "findPatient(criteria) >"
+ctrl -- p : "1*: [for each p in patients]\nok := matches(criteria) >"
+p -- insurances : "1.1: [criteria has insuranceNumber]\nins := find(insuranceNumber) >"
+
+note right of ctrl
+  returns every p
+  for which ok is true
+end note
+@enduml

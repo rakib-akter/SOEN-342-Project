@@ -1,0 +1,165 @@
+@startuml class-diagram
+title Class Diagram (partial)
+hide empty members
+skinparam style strictuml
+skinparam linetype ortho
+skinparam nodesep 110
+skinparam ranksep 80
+
+class AppointmentSystem {
+  - patients : List<Patient>
+  - services : List<MedicalService>
+  - slots : List<AvailabilitySlot>
+  - professionals : List<HealthcareProfessional>
+  - specialties : List<Specialty>
+  - locations : List<ClinicLocation>
+  - staff : AdministrativeStaff
+  - currentPatient : Patient
+  - currentService : MedicalService
+  + findPatient(insuranceNumber : String, dateOfBirth : Date, phoneNumber : String, firstName : String, lastName : String) : List<Patient>
+  + selectMedicalService(patientId : String, serviceId : String) : List<Referral>
+  + bookAppointment(slotId : String, referralId : String) : Appointment
+  + searchAvailability(professionalId : String, specialtyName : String, locationId : String, fromDate : Date, toDate : Date) : List<AvailabilitySlot>
+  + makeAvailability(professionalId : String, locationId : String, fromDate : Date, toDate : Date, daysOfWeek : Set<DayOfWeek>, dayOfMonth : Integer, startTime : Time, endTime : Time, slotLength : Duration) : String
+  + importAvailability(filePath : String, locationId : String) : String
+  + exportAvailability(filePath : String) : Integer
+  - matchesPattern(date : Date, daysOfWeek : Set<DayOfWeek>, dayOfMonth : Integer) : Boolean
+}
+
+class Patient {
+  - patientId : String
+  - firstName : String
+  - lastName : String
+  - dateOfBirth : Date
+  - phoneNumber : String
+  - insuranceNumbers : List<String>
+  + matches(insuranceNumber : String, dateOfBirth : Date, phoneNumber : String, firstName : String, lastName : String) : Boolean
+  + getActiveReferrals() : List<Referral>
+  + getReferral(referralId : String) : Referral
+  + addAppointment(appointment : Appointment)
+}
+
+class Referral {
+  - referralId : String
+  - status : ReferralStatus
+  + isActive() : Boolean
+}
+
+class MedicalService {
+  - serviceId : String
+  - name : String
+  - requiresReferral : Boolean
+  + requiresReferral() : Boolean
+  + getResources() : List<Resource>
+  + resourcesFreeDuring(slot : AvailabilitySlot) : Boolean
+}
+
+class Resource {
+  - name : String
+  - type : ResourceType
+  + isFreeDuring(slot : AvailabilitySlot) : Boolean
+  + allocate(appointment : Appointment)
+}
+
+class Appointment {
+  - appointmentId : String
+  - status : AppointmentStatus
+}
+
+class AvailabilitySlot {
+  - slotId : String
+  - date : Date
+  - startTime : Time
+  - endTime : Time
+  - status : SlotStatus
+  + book(patient : Patient, service : MedicalService, referral : Referral, staff : AdministrativeStaff) : Appointment
+  + isAvailable() : Boolean
+  + matches(professional : HealthcareProfessional, specialty : Specialty, location : ClinicLocation, fromDate : Date, toDate : Date) : Boolean
+  + overlaps(date : Date, startTime : Time, endTime : Time) : Boolean
+  - markBooked()
+}
+
+class HealthcareProfessional {
+  - employeeId : String
+  - firstName : String
+  - lastName : String
+  - title : String
+  + practicesIn(specialty : Specialty) : Boolean
+  + practicesAt(location : ClinicLocation) : Boolean
+  + addSpecialty(specialty : Specialty)
+  + addLocation(location : ClinicLocation)
+  + addSlot(location : ClinicLocation, date : Date, startTime : Time, endTime : Time) : AvailabilitySlot
+}
+
+class Specialty {
+  - name : String
+}
+
+class ClinicLocation {
+  - locationId : String
+  - name : String
+  - address : String
+}
+
+class AdministrativeStaff {
+  - employeeId : String
+  - firstName : String
+  - lastName : String
+  + logAction(actionName : String)
+  + logAction(actionName : String, patient : Patient)
+}
+
+class ActivityLogEntry {
+  - timestamp : DateTime
+  - action : String
+}
+
+enum SlotStatus <<enumeration>> {
+  AVAILABLE
+  BOOKED
+}
+enum AppointmentStatus <<enumeration>> {
+  BOOKED
+  CONFIRMED
+  ARRIVED
+  COMPLETED
+  CANCELLED
+}
+enum ReferralStatus <<enumeration>> {
+  PENDING
+}
+enum ResourceType <<enumeration>> {
+  ROOM
+  EQUIPMENT
+  ROLE
+}
+
+' Booking
+Patient "1" -left-> "*" Referral : Refers <
+Appointment "*" -up- "1" Patient : Attends <
+Appointment "*" -up-> "0..1" Referral : Results-in <
+Appointment "*" -left-> "1" MedicalService : Is-for >
+MedicalService "*" -down-> "*" Resource : Requires >
+Appointment "*" -- "*" Resource : Allocates >
+Appointment "*" -down-> "1" AvailabilitySlot : Occupies >
+Appointment "*" -down-> "1" HealthcareProfessional : Conducts <
+Appointment "*" -right-> "0..1" AdministrativeStaff : Requests <
+
+' Availability
+HealthcareProfessional "1" -right- "*" AvailabilitySlot : Offers >
+AvailabilitySlot "*" -down-> "1" ClinicLocation : Held-at >
+HealthcareProfessional "*" -down-> "1..*" ClinicLocation : Practices-at >
+HealthcareProfessional "*" -down-> "*" Specialty : Practices-in >
+
+' Activity log
+AdministrativeStaff "0..1" -right-> "*" ActivityLogEntry : Performs >
+ActivityLogEntry "*" -up-> "0..1" Patient : Concerns >
+
+' Layout only (no meaning)
+AppointmentSystem -[hidden]down- Patient
+Specialty -[hidden]right- SlotStatus
+SlotStatus -[hidden]right- AppointmentStatus
+AppointmentStatus -[hidden]right- ReferralStatus
+ReferralStatus -[hidden]right- ResourceType
+
+@enduml

@@ -2,7 +2,7 @@
 
 Iteration 2 — Appointment Tracking System
 
-The system operations below are taken from the system sequence diagrams (SSD1–SSD7). Each one is an event that crosses the system boundary from an actor to the System, treated as a black box. Together they form the public interface of the System.
+The system operations below are taken from the system sequence diagrams (SSD1–SSD9). Each one is an event that crosses the system boundary from an actor to the System, treated as a black box. Together they form the public interface of the System.
 
 All class, attribute and association names in the contracts are taken from the Iteration 2 UML domain model (`domain-model-iter2.puml`).
 
@@ -10,6 +10,7 @@ All class, attribute and association names in the contracts are taken from the I
 - SSD1 Book Appointment now includes Search Availability and books a dated AvailabilitySlot. `requestAvailableSlots` is replaced by `selectMedicalService` (CO2) and `searchAvailability` (CO13), and CO3 `bookAppointment` now takes a slot.
 - CO4 now reads the appointment's date from its slot, since Appointment no longer has a date.
 - New SSDs and contracts: Search Availability, Make Availability, Import Availability from CSV, Export Availability to CSV, and Join Waitlist (an extension of Book Appointment).
+- New SSDs without contracts yet: Cancel Appointment with Offer Appointment to a Waitlisted Patient (SSD8), and Manage Waitlist (SSD9).
 
 ## 1. System Operations
 
@@ -33,6 +34,11 @@ makeAvailability(professionalId, locationId, fromDate, toDate, repeatPattern, st
 importAvailability(filePath, locationId)
 exportAvailability(filePath)
 joinWaitlist(professionalId, specialtyName, fromDate, toDate, priority)
+cancelAppointment(appointmentId)
+offerAppointment(entryId)
+acceptOffer(entryId)
+changePriority(entryId, priority)
+removeFromWaitlist(entryId)
 ```
 
 | Contract | Operation | Use case(s) | SSD | Type |
@@ -54,6 +60,11 @@ joinWaitlist(professionalId, specialtyName, fromDate, toDate, priority)
 | CO15 | importAvailability | Import Availability from CSV | SSD6 | State change |
 | CO16 | exportAvailability | Export Availability to CSV | SSD7 | Query |
 | CO17 | joinWaitlist | Join Waitlist (extends Book Appointment) | SSD1 | State change |
+| — | cancelAppointment | Cancel Appointment | SSD8 | State change |
+| — | offerAppointment | Offer Appointment to a Waitlisted Patient (extends Cancel Appointment) | SSD8 | State change |
+| — | acceptOffer | Offer Appointment to a Waitlisted Patient (extends Cancel Appointment) | SSD8 | State change |
+| — | changePriority | Manage Waitlist | SSD9 | State change |
+| — | removeFromWaitlist | Manage Waitlist | SSD9 | State change |
 
 `findPatient` and `searchAvailability` each appear in two SSDs, so each is listed and contracted once.
 

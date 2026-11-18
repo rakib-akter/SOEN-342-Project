@@ -1,0 +1,19 @@
+@startuml ssd9-manage-waitlist
+title SSD - Manage Waitlist
+hide footbox
+skinparam sequenceMessageAlign center
+
+actor ":AdministrativeStaff" as staff
+participant ":System" as sys
+
+note over staff, sys : Precondition: staff is identified and authenticated
+
+alt change a patient's priority
+    staff -> sys : changePriority(entryId, priority)
+    sys --> staff : updated waitlist
+else remove a patient (e.g. declined an offer, see SSD8)
+    staff -> sys : removeFromWaitlist(entryId)
+    sys --> staff : patient removed from the waitlist
+end
+
+@enduml

@@ -1,0 +1,27 @@
+@startuml ssd8-cancel-appointment
+title SSD - Cancel Appointment, with Offer Appointment to a Waitlisted Patient (success and failure scenarios)
+hide footbox
+skinparam sequenceMessageAlign center
+
+actor ":AdministrativeStaff" as staff
+participant ":System" as sys
+
+note over staff, sys : Precondition: user (administrative staff or patient) is identified and authenticated
+
+staff -> sys : cancelAppointment(appointmentId)
+sys --> staff : appointment cancelled, slot freed,\neligible waitlisted patients (by priority)
+
+opt eligible waitlisted patients found (<<extend>> Offer Appointment to a Waitlisted Patient)
+    note over staff, sys : Staff offers the freed slot by phone, based on priority
+    staff -> sys : offerAppointment(entryId)
+    sys --> staff : patient marked as offered
+    alt patient accepts (main)
+        note over staff, sys : Staff books it for the patient (Book Appointment, see SSD1)
+        staff -> sys : acceptOffer(entryId)
+        sys --> staff : patient taken off the waitlist
+    else patient declines (FAILURE)
+        note over staff, sys : Staff may remove the patient (Manage Waitlist, see SSD9)
+    end
+end
+
+@enduml

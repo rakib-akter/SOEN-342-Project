@@ -7,7 +7,7 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 `AppointmentSystem` is a facade controller. It receives every system operation, and it holds:
 - the in-memory collections (patients, medical services, availability slots, and so on)
 - `staff`, the logged-in AdministrativeStaff
-- the current booking request (`currentPatient`, `currentService`), which `selectMedicalService` keeps for `searchAvailability`, `joinWaitlist` and `bookAppointment`
+- the current booking request (`currentPatient`, `currentService`), which `selectMedicalService` keeps for `joinWaitlist` and `bookAppointment`
 
 ## UC1 Book Appointment
 
@@ -48,13 +48,13 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 - **Lookups:** the controller resolves each criterion that is given (professional, specialty, location) with `find` on its collections. If one is unknown, or `fromDate` is after `toDate`, it reports "invalid search criteria".
 - **Information Expert:** each AvailabilitySlot decides whether it `matches(h, sp, l, fromDate, toDate)`:
   - It knows its status (`isAvailable()`), its date, its professional (Offers) and its location (Held-at).
-  - For a specialty, it asks its professional `practises(sp)`. The professional knows its Specialties (Practices-in).
+  - For a specialty, it asks its professional `practicesIn(sp)`. The professional knows its Specialties (Practices-in).
 - **Results:** the controller returns the matching slots sorted by date and start time. An empty list means "no available slots". Book Appointment includes this same operation (`<<include>>`).
 
 ## Make Availability
 
 ### makeAvailability (CO14)
-- **Information Expert:** HealthcareProfessional knows its ClinicLocations (Practices-at), so `practisesAt(l)` is on the professional. If it returns false, the controller reports "professional does not practise at this location".
+- **Information Expert:** HealthcareProfessional knows its ClinicLocations (Practices-at), so `practicesAt(l)` is on the professional. If it returns false, the controller reports "professional does not practise at this location".
 - **Creator:** HealthcareProfessional creates its AvailabilitySlots. It records them (Offers, 1 to *) and has the initializing data (itself). Each new slot gets `status = AVAILABLE` and is linked to `h` (Offers) and `l` (Held-at).
 - **RepeatPattern:** a design class for the `repeatPattern` parameter, which is days of the week or a day of the month. It is the Expert on whether a date `d` matches. Following domain model assumption 1, it is not stored.
 - **Information Expert:** each existing AvailabilitySlot knows its date and times, so it answers `overlaps(d, start, end)`. Intervals that clash are skipped and reported back.
@@ -87,7 +87,7 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 | MedicalService | requiresReferral, resourcesFreeDuring, getResources |
 | Referral | isActive |
 | AvailabilitySlot | book, isAvailable, markBooked, matches, overlaps, constructor (d, start, end, h, l) |
-| HealthcareProfessional | practises, practisesAt, makeSlots |
+| HealthcareProfessional | practicesIn, practicesAt, makeSlots |
 | RepeatPattern | matches |
 | Resource | isFreeDuring, allocate |
 | Appointment | constructor (p, slot, professional, service, ref, staff) |

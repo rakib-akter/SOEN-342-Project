@@ -18,7 +18,7 @@ ctrl -- specialties : "2: [specialtyName given] sp := find(specialtyName) >"
 ctrl -- locations : "3: [locationId given] l := find(locationId) >"
 ctrl -- s : "4*: [for each s in slots]\nok := matches(h, sp, l, fromDate, toDate) >"
 s -- s : "4.1: ok := isAvailable()"
-s -- hp : "4.2: [ok and sp given] ok := practises(sp) >"
+s -- hp : "4.2: [ok and sp given] ok := practicesIn(sp) >"
 hp -- hpSpecialties : "4.2.1: ok := includes(sp) >"
 
 note right of ctrl

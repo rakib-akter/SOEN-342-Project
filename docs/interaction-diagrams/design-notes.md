@@ -12,7 +12,7 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 ## UC1 Book Appointment
 
 ### findPatient (CO1)
-- **Information Expert:** Patient knows its firstName, lastName, dateOfBirth and phoneNumber, so `matches(criteria)` is on Patient. It searches its own Insurance objects (Covered-by) for an insurance number.
+- **Information Expert:** Patient knows its firstName, lastName, dateOfBirth, phoneNumber and insuranceNumbers, so `matches(insuranceNumber, dateOfBirth, phoneNumber, firstName, lastName)` is on Patient. Insurance is kept inside Patient as `insuranceNumbers`, since the search only needs the number.
 - **Results:** the controller returns every patient that matches. An empty list is extension 3a, and several matches is 3b.
 
 ### selectMedicalService (CO2)
@@ -55,9 +55,9 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 
 ### makeAvailability (CO14)
 - **Information Expert:** HealthcareProfessional knows its ClinicLocations (Practices-at), so `practicesAt(l)` is on the professional. If it returns false, the controller reports "professional does not practise at this location".
-- **Creator:** HealthcareProfessional creates its AvailabilitySlots. It records them (Offers, 1 to *) and has the initializing data (itself). Each new slot gets `status = AVAILABLE` and is linked to `h` (Offers) and `l` (Held-at).
-- **RepeatPattern:** a design class for the `repeatPattern` parameter, which is days of the week or a day of the month. It is the Expert on whether a date `d` matches. Following domain model assumption 1, it is not stored.
-- **Information Expert:** each existing AvailabilitySlot knows its date and times, so it answers `overlaps(d, start, end)`. Intervals that clash are skipped and reported back.
+- **Creator:** HealthcareProfessional creates its AvailabilitySlots through `addSlot(l, d, start, end)`. It records them (Offers, 1 to *) and has the initializing data (itself). Each new slot gets `status = AVAILABLE` and is linked to `h` (Offers) and `l` (Held-at).
+- **Repeat pattern:** given as the parameters `daysOfWeek` and `dayOfMonth`. The controller checks each date with its private `matchesPattern(d, daysOfWeek, dayOfMonth)`. Following domain model assumption 1, the pattern is not stored.
+- **Information Expert:** each existing AvailabilitySlot knows its date and times, so it answers `overlaps(d, start, end)`. `addSlot` returns nothing when an interval clashes, and the controller reports that interval as skipped in its summary.
 - **Controller collection:** the new slots are also added to the controller's slot collection. `searchAvailability` and `bookAppointment` look slots up there.
 - **Activity log:** `staff` logs "make availability" once for the whole operation, with no patient (Concerns is 0..1).
 
@@ -70,25 +70,24 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 | `slot` → `service`, `p`, `ref`, `staff` (passed in `book`) | parameter |
 | `service` → `r` (Requires) | attribute |
 | `a` → `r` (`rs` returned by `getResources`) | local |
-| `p` → its Referral, Insurance and Appointment collections | attribute |
+| `p` → its Referral and Appointment collections | attribute |
 | `staff` → its ActivityLogEntry collection | attribute |
 | controller → `s` (each slot in `slots`), `h`, `l`, `sp` returned by `find` | local |
 | `s` → its `professional` (Offers) | attribute |
 | `professional` / `h` → its Specialty, ClinicLocation and AvailabilitySlot collections | attribute |
-| `h` → `repeatPattern`, `l` (passed in `makeSlots`) | parameter |
+| `h` → `l` (passed in `addSlot`) | parameter |
 | `h` → `x` (each slot in its collection), `s` (just created) | attribute / local |
 
 ## Methods per class (for the class diagram)
 
 | Class | Methods |
 |---|---|
-| AppointmentSystem | findPatient, selectMedicalService, bookAppointment, searchAvailability, makeAvailability |
+| AppointmentSystem | findPatient, selectMedicalService, bookAppointment, searchAvailability, makeAvailability, importAvailability, exportAvailability, matchesPattern (private) |
 | Patient | matches, getActiveReferrals, getReferral, addAppointment |
 | MedicalService | requiresReferral, resourcesFreeDuring, getResources |
 | Referral | isActive |
 | AvailabilitySlot | book, isAvailable, markBooked, matches, overlaps, constructor (d, start, end, h, l) |
-| HealthcareProfessional | practicesIn, practicesAt, makeSlots |
-| RepeatPattern | matches |
+| HealthcareProfessional | practicesIn, practicesAt, addSpecialty, addLocation, addSlot |
 | Resource | isFreeDuring, allocate |
 | Appointment | constructor (p, slot, professional, service, ref, staff) |
 | AdministrativeStaff | logAction |

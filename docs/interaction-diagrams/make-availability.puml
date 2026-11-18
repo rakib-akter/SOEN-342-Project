@@ -9,7 +9,6 @@ collections "<u>:ClinicLocation</u>" as locations
 collections "<u>:AvailabilitySlot</u>" as allSlots
 rectangle "<u>h:HealthcareProfessional</u>" as h
 collections "<u>:ClinicLocation</u>" as hLocations
-rectangle "<u>repeatPattern:RepeatPattern</u>" as rp
 rectangle "<u>x:AvailabilitySlot</u>" as x
 rectangle "<u>s:AvailabilitySlot</u>" as s
 collections "<u>:AvailabilitySlot</u>" as hSlots
@@ -17,25 +16,26 @@ rectangle "<u>staff:AdministrativeStaff</u>" as staff
 rectangle "<u>e:ActivityLogEntry</u>" as e
 collections "<u>:ActivityLogEntry</u>" as entries
 
-start -right- ctrl : "makeAvailability(professionalId, locationId, fromDate, toDate,\nrepeatPattern, startTime, endTime, slotLength) >"
+start -right- ctrl : "makeAvailability(professionalId, locationId, fromDate, toDate,\ndaysOfWeek, dayOfMonth, startTime, endTime, slotLength) >"
 
 ctrl -- professionals : "1: h := find(professionalId) >"
 ctrl -- locations : "2: l := find(locationId) >"
-ctrl -- h : "3: ok := practicesAt(l)\n4: [ok] created := makeSlots(l, fromDate, toDate,\nrepeatPattern, startTime, endTime, slotLength) >"
+ctrl -- ctrl : "4*: [ok; for each date d from fromDate to toDate]\nm := matchesPattern(d, daysOfWeek, dayOfMonth)"
+ctrl -- h : "3: ok := practicesAt(l)\n5*: [m; for each interval start-end of d]\ns := addSlot(l, d, start, end) >"
 h -- hLocations : "3.1: ok := includes(l) >"
-h -- rp : "4.1*: [for each date d from fromDate to toDate]\nm := matches(d) >"
-h -- x : "4.2*: [m; for each interval start-end of d;\nfor each x in slots] clash := overlaps(d, start, end) >"
-h -- s : "4.3*: [m and no clash]\ns := create(d, start, end, self, l) >"
-h -- hSlots : "4.4*: [s created] add(s) >"
-ctrl -- allSlots : "5: [ok] addAll(created) >"
-ctrl -- staff : "6: [ok] logAction('make availability') >"
-staff -- e : "6.1: create('make availability') >"
-staff -- entries : "6.2: add(e) >"
+h -- x : "5.1*: [for each x in slots]\nclash := overlaps(d, start, end) >"
+h -- s : "5.2: [no clash] s := create(d, start, end, self, l) >"
+h -- hSlots : "5.3: [s created] add(s) >"
+ctrl -- allSlots : "6*: [s created] add(s) >"
+ctrl -- staff : "7: [ok] logAction('make availability') >"
+staff -- e : "7.1: create('make availability') >"
+staff -- entries : "7.2: add(e) >"
 
 note right of ctrl
   staff: logged-in AdministrativeStaff
-  returns created, and the intervals
-  skipped because of a clash
+  returns a summary: the slots created,
+  and the intervals skipped because
+  addSlot returned nothing (clash)
 end note
 
 note bottom of s

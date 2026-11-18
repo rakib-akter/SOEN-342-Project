@@ -5,36 +5,36 @@ skinparam linetype polyline
 label " " as start
 rectangle "<u>:AppointmentSystem</u>" as ctrl
 collections "<u>:AvailabilitySlot</u>" as slots
-rectangle "<u>p:Patient</u>" as p
+rectangle "<u>patient:Patient</u>" as p
 collections "<u>:Referral</u>" as referrals
 collections "<u>:Appointment</u>" as appts
 rectangle "<u>slot:AvailabilitySlot</u>" as slot
 rectangle "<u>service:MedicalService</u>" as service
-rectangle "<u>r:Resource</u>" as r
-rectangle "<u>a:Appointment</u>" as a
+rectangle "<u>resource:Resource</u>" as r
+rectangle "<u>appointment:Appointment</u>" as a
 rectangle "<u>staff:AdministrativeStaff</u>" as staff
-rectangle "<u>e:ActivityLogEntry</u>" as e
+rectangle "<u>entry:ActivityLogEntry</u>" as e
 collections "<u>:ActivityLogEntry</u>" as entries
 
 start -right- ctrl : "bookAppointment(slotId, referralId) >"
 
 ctrl -- slots : "1: slot := find(slotId) >"
-ctrl -- p : "2: [referralId given] ref := getReferral(referralId)\n4: [a created] addAppointment(a) >"
-p -- referrals : "2.1: ref := find(referralId) >"
-p -- appts : "4.1: add(a) >"
-ctrl -- slot : "3: a := book(p, service, ref, staff) >"
+ctrl -- p : "2: [referralId given] referral := getReferral(referralId)\n4: [appointment created] addAppointment(appointment) >"
+p -- referrals : "2.1: referral := find(referralId) >"
+p -- appts : "4.1: add(appointment) >"
+ctrl -- slot : "3: appointment := book(patient, service, referral, staff) >"
 slot -- slot : "3.1: ok := isAvailable()\n3.4: [ok] markBooked()"
 slot -- service : "3.2: [ok] ok := resourcesFreeDuring(self) >"
-service -- r : "3.2.1*: [for each r in resources]\nfree := isFreeDuring(slot) >"
-slot -- a : "3.3: [ok] create(p, self, professional,\nservice, ref, staff) >"
-a -- service : "3.3.1: rs := getResources() >"
-a -- r : "3.3.2*: [for each r in rs]\nallocate(a) >"
-ctrl -- staff : "5: [a created]\nlogAction('book appointment', p) >"
-staff -- e : "5.1: create('book appointment', p) >"
-staff -- entries : "5.2: add(e) >"
+service -- r : "3.2.1*: [for each resource in resources]\nfree := isFreeDuring(slot) >"
+slot -- a : "3.3: [ok] appointment := create(patient, self, professional,\nservice, referral, staff) >"
+a -- service : "3.3.1: resources := getResources() >"
+a -- r : "3.3.2*: [for each resource in resources]\nallocate(appointment) >"
+ctrl -- staff : "5: [appointment created]\nlogAction('book appointment', patient) >"
+staff -- e : "5.1: entry := create('book appointment', patient) >"
+staff -- entries : "5.2: add(entry) >"
 
 note right of ctrl
-  p, service: current booking request
+  patient, service: current booking request
   (from selectMedicalService, CO2)
   staff: logged-in AdministrativeStaff
 end note
@@ -44,11 +44,11 @@ note bottom of slot
 end note
 
 note bottom of a
-  {a.status = BOOKED}
+  {appointment.status = BOOKED}
 end note
 
 note bottom of e
-  {e.timestamp = now,
-   e.action = 'book appointment'}
+  {entry.timestamp = now,
+   entry.action = 'book appointment'}
 end note
 @enduml

@@ -4,17 +4,17 @@ skinparam linetype polyline
 
 label " " as start
 rectangle "<u>:AppointmentSystem</u>" as ctrl
-rectangle "<u>p:Patient</u>" as p
+rectangle "<u>patient:Patient</u>" as patient
 
 start -right- ctrl : "findPatient(insuranceNumber, dateOfBirth,\nphoneNumber, firstName, lastName) >"
-ctrl -- p : "1*: [for each p in patients]\nok := matches(insuranceNumber, dateOfBirth,\nphoneNumber, firstName, lastName) >"
+ctrl -- patient : "1*: [for each patient in patients]\nok := matches(insuranceNumber, dateOfBirth,\nphoneNumber, firstName, lastName) >"
 
 note right of ctrl
-  returns every p
+  returns every patient
   for which ok is true
 end note
 
-note bottom of p
+note bottom of patient
   checks its own fields and
   insuranceNumbers
 end note

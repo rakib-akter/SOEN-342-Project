@@ -7,22 +7,22 @@ rectangle "<u>:AppointmentSystem</u>" as ctrl
 collections "<u>:HealthcareProfessional</u>" as professionals
 collections "<u>:Specialty</u>" as specialties
 collections "<u>:ClinicLocation</u>" as locations
-rectangle "<u>s:AvailabilitySlot</u>" as s
-rectangle "<u>professional:HealthcareProfessional</u>" as hp
+rectangle "<u>slot:AvailabilitySlot</u>" as slot
+rectangle "<u>slotProfessional:HealthcareProfessional</u>" as hp
 collections "<u>:Specialty</u>" as hpSpecialties
 
 start -right- ctrl : "searchAvailability(professionalId, specialtyName,\nlocationId, fromDate, toDate) >"
 
-ctrl -- professionals : "1: [professionalId given] h := find(professionalId) >"
-ctrl -- specialties : "2: [specialtyName given] sp := find(specialtyName) >"
-ctrl -- locations : "3: [locationId given] l := find(locationId) >"
-ctrl -- s : "4*: [for each s in slots]\nok := matches(h, sp, l, fromDate, toDate) >"
-s -- s : "4.1: ok := isAvailable()"
-s -- hp : "4.2: [ok and sp given] ok := practicesIn(sp) >"
-hp -- hpSpecialties : "4.2.1: ok := includes(sp) >"
+ctrl -- professionals : "1: [professionalId given] professional := find(professionalId) >"
+ctrl -- specialties : "2: [specialtyName given] specialty := find(specialtyName) >"
+ctrl -- locations : "3: [locationId given] location := find(locationId) >"
+ctrl -- slot : "4*: [for each slot in slots]\nok := matches(professional, specialty, location, fromDate, toDate) >"
+slot -- slot : "4.1: ok := isAvailable()"
+slot -- hp : "4.2: [ok and specialty given] ok := practicesIn(specialty) >"
+hp -- hpSpecialties : "4.2.1: ok := includes(specialty) >"
 
 note right of ctrl
-  returns every s for which ok is true,
+  returns every slot for which ok is true,
   sorted by date and start time
 end note
 @enduml

@@ -30,15 +30,15 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 
   | Association | Formed by |
   |---|---|
-  | Attends | stores `p` |
+  | Attends | stores `patient` |
   | Occupies | stores the slot |
   | Conducts | stores the slot's professional |
   | Is-for | stores `service` |
-  | Results-in | stores `ref` |
+  | Results-in | stores `referral` |
   | Requests | stores `staff` |
-  | Allocates | stores `rs`, and calls `r.allocate(a)` on each resource |
+  | Allocates | stores `resources`, and calls `resource.allocate(appointment)` on each resource |
 
-  `p.addAppointment(a)` forms Attends from the patient's side.
+  `patient.addAppointment(appointment)` forms Attends from the patient's side.
 - **Creator:** ClinicStaff records its ActivityLogEntries (Performs), so `staff` creates the entry and adds it to its collection.
 - **Failure:** if `book()` returns no Appointment, the controller reports "slot unavailable" (7a) or "required resources unavailable", and staff picks another slot.
 
@@ -46,18 +46,18 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 
 ### searchAvailability (CO13)
 - **Lookups:** the controller resolves each criterion that is given (professional, specialty, location) with `find` on its collections. If one is unknown, or `fromDate` is after `toDate`, it reports "invalid search criteria".
-- **Information Expert:** each AvailabilitySlot decides whether it `matches(h, sp, l, fromDate, toDate)`:
+- **Information Expert:** each AvailabilitySlot decides whether it `matches(professional, specialty, location, fromDate, toDate)`:
   - It knows its status (`isAvailable()`), its date, its professional (Offers) and its location (Held-at).
-  - For a specialty, it asks its professional `practicesIn(sp)`. The professional knows its Specialties (Practices-in).
+  - For a specialty, it asks its professional `practicesIn(specialty)`. The professional knows its Specialties (Practices-in).
 - **Results:** the controller returns the matching slots sorted by date and start time. An empty list means "no available slots". Book Appointment includes this same operation (`<<include>>`).
 
 ## Make Availability
 
 ### makeAvailability (CO14)
-- **Information Expert:** HealthcareProfessional knows its ClinicLocations (Practices-at), so `practicesAt(l)` is on the professional. If it returns false, the controller reports "professional does not practise at this location".
-- **Creator:** HealthcareProfessional creates its AvailabilitySlots through `addSlot(l, d, start, end)`. It records them (Offers, 1 to *) and has the initializing data (itself). Each new slot gets `status = AVAILABLE` and is linked to `h` (Offers) and `l` (Held-at).
-- **Repeat pattern:** given as the parameters `daysOfWeek` and `dayOfMonth`. The controller checks each date with its private `matchesPattern(d, daysOfWeek, dayOfMonth)`. Following domain model assumption 1, the pattern is not stored.
-- **Information Expert:** each existing AvailabilitySlot knows its date and times, so it answers `overlaps(d, start, end)`. `addSlot` returns nothing when an interval clashes, and the controller reports that interval as skipped in its summary.
+- **Information Expert:** HealthcareProfessional knows its ClinicLocations (Practices-at), so `practicesAt(location)` is on the professional. If it returns false, the controller reports "professional does not practise at this location".
+- **Creator:** HealthcareProfessional creates its AvailabilitySlots through `addSlot(location, date, startTime, endTime)`. It records them (Offers, 1 to *) and has the initializing data (itself). Each new slot gets `status = AVAILABLE` and is linked to `professional` (Offers) and `location` (Held-at).
+- **Repeat pattern:** given as the parameters `daysOfWeek` and `dayOfMonth`. The controller checks each date with its private `matchesPattern(date, daysOfWeek, dayOfMonth)`. Following domain model assumption 1, the pattern is not stored.
+- **Information Expert:** each existing AvailabilitySlot knows its date and times, so it answers `overlaps(date, startTime, endTime)`. `addSlot` returns nothing when an interval clashes, and the controller reports that interval as skipped in its summary.
 - **Controller collection:** the new slots are also added to the controller's slot collection. `searchAvailability` and `bookAppointment` look slots up there.
 - **Activity log:** `staff` logs "make availability" once for the whole operation, with no patient (Concerns is 0..1).
 
@@ -66,17 +66,17 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 | Sender → receiver | Kind |
 |---|---|
 | controller → its collections, `staff`, current booking request | attribute |
-| controller → `slot`, `p`, `service` returned by `find` | local |
-| `slot` → `service`, `p`, `ref`, `staff` (passed in `book`) | parameter |
-| `service` → `r` (Requires) | attribute |
-| `a` → `r` (`rs` returned by `getResources`) | local |
-| `p` → its Referral and Appointment collections | attribute |
+| controller → `slot`, `patient`, `service` returned by `find` | local |
+| `slot` → `service`, `patient`, `referral`, `staff` (passed in `book`) | parameter |
+| `service` → `resource` (Requires) | attribute |
+| `appointment` → `resource` (`resources` returned by `getResources`) | local |
+| `patient` → its Referral and Appointment collections | attribute |
 | `staff` → its ActivityLogEntry collection | attribute |
-| controller → `s` (each slot in `slots`), `h`, `l`, `sp` returned by `find` | local |
-| `s` → its `professional` (Offers) | attribute |
-| `professional` / `h` → its Specialty, ClinicLocation and AvailabilitySlot collections | attribute |
-| `h` → `l` (passed in `addSlot`) | parameter |
-| `h` → `x` (each slot in its collection), `s` (just created) | attribute / local |
+| controller → `slot` (each slot in `slots`), `professional`, `location`, `specialty` returned by `find` | local |
+| `slot` → its `slotProfessional` (Offers) | attribute |
+| `professional` / `slotProfessional` → its Specialty, ClinicLocation and AvailabilitySlot collections | attribute |
+| `professional` → `location` (passed in `addSlot`) | parameter |
+| `professional` → `existingSlot` (each slot in its collection), `newSlot` (just created) | attribute / local |
 
 ## Methods per class (for the class diagram)
 
@@ -86,9 +86,9 @@ These diagrams cover the three critical use cases: Book Appointment, Search Avai
 | Patient | matches, getActiveReferrals, getReferral, addAppointment |
 | MedicalService | requiresReferral, resourcesFreeDuring, getResources |
 | Referral | isActive |
-| AvailabilitySlot | book, isAvailable, markBooked, matches, overlaps, constructor (d, start, end, h, l) |
+| AvailabilitySlot | book, isAvailable, markBooked, matches, overlaps, constructor (date, startTime, endTime, professional, location) |
 | HealthcareProfessional | practicesIn, practicesAt, addSpecialty, addLocation, addSlot |
 | Resource | isFreeDuring, allocate |
-| Appointment | constructor (p, slot, professional, service, ref, staff) |
+| Appointment | constructor (patient, slot, professional, service, referral, staff) |
 | AdministrativeStaff | logAction |
-| ActivityLogEntry | constructor (action, p [0..1]) |
+| ActivityLogEntry | constructor (actionName, patient) |

@@ -7,29 +7,29 @@ rectangle "<u>:AppointmentSystem</u>" as ctrl
 collections "<u>:HealthcareProfessional</u>" as professionals
 collections "<u>:ClinicLocation</u>" as locations
 collections "<u>:AvailabilitySlot</u>" as allSlots
-rectangle "<u>h:HealthcareProfessional</u>" as h
+rectangle "<u>professional:HealthcareProfessional</u>" as h
 collections "<u>:ClinicLocation</u>" as hLocations
-rectangle "<u>x:AvailabilitySlot</u>" as x
-rectangle "<u>s:AvailabilitySlot</u>" as s
+rectangle "<u>existingSlot:AvailabilitySlot</u>" as x
+rectangle "<u>newSlot:AvailabilitySlot</u>" as s
 collections "<u>:AvailabilitySlot</u>" as hSlots
 rectangle "<u>staff:AdministrativeStaff</u>" as staff
-rectangle "<u>e:ActivityLogEntry</u>" as e
+rectangle "<u>entry:ActivityLogEntry</u>" as e
 collections "<u>:ActivityLogEntry</u>" as entries
 
 start -right- ctrl : "makeAvailability(professionalId, locationId, fromDate, toDate,\ndaysOfWeek, dayOfMonth, startTime, endTime, slotLength) >"
 
-ctrl -- professionals : "1: h := find(professionalId) >"
-ctrl -- locations : "2: l := find(locationId) >"
-ctrl -- ctrl : "4*: [ok; for each date d from fromDate to toDate]\nm := matchesPattern(d, daysOfWeek, dayOfMonth)"
-ctrl -- h : "3: ok := practicesAt(l)\n5*: [m; for each interval start-end of d]\ns := addSlot(l, d, start, end) >"
-h -- hLocations : "3.1: ok := includes(l) >"
-h -- x : "5.1*: [for each x in slots]\nclash := overlaps(d, start, end) >"
-h -- s : "5.2: [no clash] s := create(d, start, end, self, l) >"
-h -- hSlots : "5.3: [s created] add(s) >"
-ctrl -- allSlots : "6*: [s created] add(s) >"
+ctrl -- professionals : "1: professional := find(professionalId) >"
+ctrl -- locations : "2: location := find(locationId) >"
+ctrl -- ctrl : "4*: [ok; for each date from fromDate to toDate]\nmatching := matchesPattern(date, daysOfWeek, dayOfMonth)"
+ctrl -- h : "3: ok := practicesAt(location)\n5*: [matching; for each interval startTime-endTime of date]\nnewSlot := addSlot(location, date, startTime, endTime) >"
+h -- hLocations : "3.1: ok := includes(location) >"
+h -- x : "5.1*: [for each existingSlot in slots]\nclash := overlaps(date, startTime, endTime) >"
+h -- s : "5.2: [no clash] newSlot := create(date, startTime, endTime, self, location) >"
+h -- hSlots : "5.3: [newSlot created] add(newSlot) >"
+ctrl -- allSlots : "6*: [newSlot created] add(newSlot) >"
 ctrl -- staff : "7: [ok] logAction('make availability') >"
-staff -- e : "7.1: create('make availability') >"
-staff -- entries : "7.2: add(e) >"
+staff -- e : "7.1: entry := create('make availability') >"
+staff -- entries : "7.2: add(entry) >"
 
 note right of ctrl
   staff: logged-in AdministrativeStaff
@@ -39,11 +39,11 @@ note right of ctrl
 end note
 
 note bottom of s
-  {s.status = AVAILABLE}
+  {newSlot.status = AVAILABLE}
 end note
 
 note bottom of e
-  {e.timestamp = now,
-   e.action = 'make availability'}
+  {entry.timestamp = now,
+   entry.action = 'make availability'}
 end note
 @enduml

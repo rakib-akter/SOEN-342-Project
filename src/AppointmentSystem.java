@@ -44,6 +44,8 @@ public class AppointmentSystem {
         currentPatient = find(patients, patient -> patient.getPatientId().equals(patientId));
         currentService = find(services, service -> service.getServiceId().equals(serviceId));
         if (currentPatient == null || currentService == null) {
+            currentPatient = null;
+            currentService = null;
             return null;
         }
         if (currentService.requiresReferral()) {
@@ -54,7 +56,7 @@ public class AppointmentSystem {
 
     public Appointment bookAppointment(String slotId, String referralId) {
         AvailabilitySlot slot = find(slots, s -> s.getSlotId().equals(slotId));
-        if (currentPatient == null || slot == null) {
+        if (currentPatient == null || currentService == null || slot == null) {
             return null;
         }
         Referral referral = referralId == null ? null : currentPatient.getReferral(referralId);
@@ -141,6 +143,9 @@ public class AppointmentSystem {
         int imported = 0;
         int skipped = 0;
         for (String line : lines.subList(Math.min(1, lines.size()), lines.size())) {
+            if (line.isBlank()) {
+                continue;
+            }
             String[] row = line.split(",", -1);
             LocalDate date;
             LocalTime start;
@@ -184,7 +189,11 @@ public class AppointmentSystem {
     }
 
 
+    // Returns the number of slots written, 0 if there is nothing to export, or -1 if the file cannot be written.
     public int exportAvailability(String filePath) {
+        if (slots.isEmpty()) {
+            return 0;
+        }
         List<String> lines = new ArrayList<>();
         lines.add("First Name,Last Name,Title,Specialty,Date,Start,End");
         for (AvailabilitySlot slot : slots) {

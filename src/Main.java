@@ -17,10 +17,14 @@ public class Main {
                         List.of(), List.of()),
                 new Patient("PT4", "Thomas", "Girard", LocalDate.of(1992, 8, 24), "514-555-0104",
                         List.of("GIRT92082403"), List.of()));
+        // Predefined resources. Nurse is a role, not a specific person.
+        Resource examRoom = new Resource("Exam room 1", ResourceType.ROOM);
+        Resource ecg = new Resource("ECG machine", ResourceType.EQUIPMENT);
+        Resource nurse = new Resource("Nurse", ResourceType.ROLE);
         List<MedicalService> services = List.of(
                 new MedicalService("MS1", "General consultation", false),
-                new MedicalService("MS2", "Cardiology consultation", true),
-                new MedicalService("MS3", "Dermatology consultation", true));
+                new MedicalService("MS2", "Cardiology consultation", true, List.of(examRoom, ecg, nurse)),
+                new MedicalService("MS3", "Dermatology consultation", true, List.of(examRoom)));
         AdministrativeStaff staff = new AdministrativeStaff("E1", "Julie", "Martin");
         AppointmentSystem system = new AppointmentSystem(staff, locations, patients, services);
 
@@ -33,6 +37,7 @@ public class Main {
             System.out.println("3. Search availability");
             System.out.println("4. Book appointment");
             System.out.println("5. Export availability to CSV");
+            System.out.println("6. View activity log");
             System.out.println("0. Exit");
             String choice = ask("Choice");
             try {
@@ -48,7 +53,14 @@ public class Main {
                     case "4" -> book(system, services);
                     case "5" -> {
                         int written = system.exportAvailability(ask("Output file"));
-                        System.out.println(written < 0 ? "Could not write the file." : "Exported " + written + " slots.");
+                        System.out.println(written < 0 ? "Could not write the file."
+                                : written == 0 ? "Nothing to export." : "Exported " + written + " slots.");
+                    }
+                    case "6" -> {
+                        if (staff.getActivityLog().isEmpty()) {
+                            System.out.println("No activity recorded yet.");
+                        }
+                        staff.getActivityLog().forEach(System.out::println);
                     }
                     case "0" -> {
                         return;
@@ -92,7 +104,8 @@ public class Main {
         search(system);
         Appointment appointment = system.bookAppointment(ask("Slot id"), ask("Referral id (blank if none)"));
         System.out.println(appointment == null
-                ? "Booking failed: the slot is not available or the referral is not valid."
+                ? "Booking failed: the slot is not available, the referral is not valid,"
+                        + " or a required room or equipment is taken at that time."
                 : "Booked: " + appointment);
     }
 

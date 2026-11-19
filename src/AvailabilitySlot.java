@@ -24,9 +24,10 @@ public class AvailabilitySlot {
         this.location = location;
     }
 
-    // Creates the Appointment and marks the slot BOOKED. Returns null if the slot is not available.
+    // Creates the Appointment and marks the slot BOOKED. Returns null if the slot is not available
+    // or a room or equipment the service requires is taken at that time (Allocate Resources).
     public Appointment book(Patient patient, MedicalService service, Referral referral, AdministrativeStaff staff) {
-        if (!isAvailable()) {
+        if (!isAvailable() || !service.resourcesFreeDuring(this)) {
             return null;
         }
         Appointment appointment = new Appointment(patient, this, professional, service, referral, staff);
